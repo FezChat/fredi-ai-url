@@ -5,8 +5,6 @@ const { Boom } = require('@hapi/boom');
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
-const { promisify } = require('util');
 const csv = require('csv-parser');
 const vcards = require('vcards-js');
 const QRCode = require('qrcode');
@@ -16,14 +14,14 @@ const app = express();
 
 // Create necessary directories
 const uploadDir = 'uploads';
-const publicDir = 'public';
+const dataDir = 'data';
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-if (!fs.existsSync(publicDir)) {
-  fs.mkdirSync(publicDir, { recursive: true });
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
 // Configure multer
@@ -51,14 +49,49 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
+
+// WhatsApp connection variables
 let socket = null;
 let isConnected = false;
 let qrCode = null;
 
+// Contacts storage
 const contactsDB = {
   channels: {},
   groups: {}
 };
+
+// Load contacts from file on startup
+function loadContactsFromFile() {
+  try {
+    const filePath = path.join(dataDir, 'contacts.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf8');
+      const loaded = JSON.parse(data);
+      Object.keys(loaded.channels).forEach(key => {
+        contactsDB.channels[key] = loaded.channels[key];
+      });
+      Object.keys(loaded.groups).forEach(key => {
+        contactsDB.groups[key] = loaded.groups[key];
+      });
+      console.log(`✅ Loaded ${Object.keys(contactsDB.channels).length} channels and ${Object.keys(contactsDB.groups).length} groups from file`);
+    }
+  } catch (error) {
+    console.error('❌ Error loading contacts:', error);
+  }
+}
+
+// Save contacts to file
+function saveContactsToFile() {
+  try {
+    fs.writeFileSync(
+      path.join(dataDir, 'contacts.json'),
+      JSON.stringify(contactsDB, null, 2)
+    );
+  } catch (error) {
+    console.error('❌ Error saving contacts:', error);
+  }
+}
 
 // Function to parse contact files
 async function parseContactFile(filePath, fileType) {
@@ -68,9 +101,7 @@ async function parseContactFile(filePath, fileType) {
     switch (fileType) {
       case 'vcf':
         const vcardContent = fs.readFileSync(filePath, 'utf8');
-        // Simple VCF parser
         const vcardLines = vcardContent.split('\n');
-        let currentPhone = '';
         for (const line of vcardLines) {
           if (line.startsWith('TEL;')) {
             const phoneMatch = line.match(/TEL[^:]*:(.+)/);
@@ -99,7 +130,6 @@ async function parseContactFile(filePath, fileType) {
           fs.createReadStream(filePath)
             .pipe(csv())
             .on('data', (row) => {
-              // Try common column names for phone numbers
               const phoneKey = Object.keys(row).find(key => 
                 key.toLowerCase().includes('phone') || 
                 key.toLowerCase().includes('mobile') ||
@@ -123,7 +153,7 @@ async function parseContactFile(filePath, fileType) {
           if (phone.length >= 10) contacts.push(phone);
         });
         break;
-        
+
       default:
         throw new Error(`Unsupported file type: ${fileType}`);
     }
@@ -139,6 +169,7 @@ async function parseContactFile(filePath, fileType) {
 // WhatsApp Connection Handler
 async function connectToWhatsApp() {
   try {
+    console.log('🔗 Connecting to WhatsApp...');
     const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
     socket = makeWASocket({
@@ -153,9 +184,9 @@ async function connectToWhatsApp() {
       if (qr) {
         try {
           qrCode = await QRCode.toDataURL(qr);
-          console.log('QR Code generated');
+          console.log('📱 QR Code generated - Scan with WhatsApp');
         } catch (error) {
-          console.error('Error generating QR code:', error);
+          console.error('❌ Error generating QR code:', error);
         }
       }
 
@@ -163,21 +194,25 @@ async function connectToWhatsApp() {
         const shouldReconnect = 
           new Boom(lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
 
+        console.log('❌ WhatsApp disconnected');
+        isConnected = false;
+        qrCode = null;
+
         if (shouldReconnect) {
+          console.log('🔄 Reconnecting in 3 seconds...');
           setTimeout(() => connectToWhatsApp(), 3000);
         }
-        isConnected = false;
-        console.log('❌ WhatsApp disconnected');
       } else if (connection === 'open') {
         isConnected = true;
-        console.log('✅ Connected to WhatsApp!');
         qrCode = null;
+        console.log('✅ Connected to WhatsApp!');
       }
     });
 
     socket.ev.on('creds.update', saveCreds);
   } catch (error) {
-    console.error('Error connecting to WhatsApp:', error);
+    console.error('❌ Error connecting to WhatsApp:', error);
+    setTimeout(() => connectToWhatsApp(), 5000);
   }
 }
 
@@ -193,11 +228,10 @@ async function boostChannel(channelId, contacts) {
     details: []
   };
 
-  console.log(`Starting channel boost for ${contacts.length} contacts...`);
+  console.log(`🚀 Starting channel boost for ${contacts.length} contacts to ${channelId}...`);
 
   for (const contact of contacts) {
     try {
-      // Follow newsletter/channel
       await socket.newsletterFollow(channelId);
       
       results.success++;
@@ -207,7 +241,7 @@ async function boostChannel(channelId, contacts) {
         message: `Followed channel ${channelId}`
       });
 
-      console.log(`✅ Contact ${contact} followed channel`);
+      console.log(`✅ ${contact} followed channel`);
 
       // Delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -220,10 +254,11 @@ async function boostChannel(channelId, contacts) {
         message: error.message
       });
       
-      console.log(`❌ Failed for contact ${contact}: ${error.message}`);
+      console.log(`❌ Failed for ${contact}: ${error.message}`);
     }
   }
 
+  console.log(`✅ Channel boost completed: ${results.success} success, ${results.failed} failed`);
   return results;
 }
 
@@ -239,7 +274,7 @@ async function boostGroup(groupInviteCode, contacts) {
     details: []
   };
 
-  console.log(`Starting group boost for ${contacts.length} contacts...`);
+  console.log(`🚀 Starting group boost for ${contacts.length} contacts to group ${groupInviteCode}...`);
 
   let groupJid = null;
   
@@ -257,11 +292,7 @@ async function boostGroup(groupInviteCode, contacts) {
       const jid = `${contact}@s.whatsapp.net`;
       
       // Add contact to group
-      await socket.groupParticipantsUpdate(
-        groupJid,
-        [jid],
-        'add'
-      );
+      await socket.groupParticipantsUpdate(groupJid, [jid], 'add');
 
       results.success++;
       results.details.push({
@@ -270,7 +301,7 @@ async function boostGroup(groupInviteCode, contacts) {
         message: `Added to group`
       });
 
-      console.log(`✅ Added contact ${contact} to group`);
+      console.log(`✅ Added ${contact} to group`);
 
       // Delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -283,22 +314,22 @@ async function boostGroup(groupInviteCode, contacts) {
         message: error.message
       });
       
-      console.log(`❌ Failed to add contact ${contact}: ${error.message}`);
+      console.log(`❌ Failed to add ${contact}: ${error.message}`);
     }
   }
 
+  console.log(`✅ Group boost completed: ${results.success} success, ${results.failed} failed`);
   return results;
 }
 
 // API Routes
 
-// Status endpoint
+// Status endpoint - SIMPLIFIED (No QR in web)
 app.get('/api/status', (req, res) => {
   res.json({
     success: true,
     connected: isConnected,
-    hasQR: !!qrCode,
-    qrCode: qrCode
+    message: isConnected ? 'WhatsApp connected' : 'WhatsApp not connected'
   });
 });
 
@@ -306,11 +337,6 @@ app.get('/api/status', (req, res) => {
 app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
   console.log('\n📥 Upload request received');
   console.log('Body:', req.body);
-  console.log('File:', req.file ? {
-    name: req.file.originalname,
-    size: req.file.size,
-    path: req.file.path
-  } : 'No file');
 
   try {
     const { type, targetId } = req.body;
@@ -324,7 +350,6 @@ app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
     }
 
     if (!type || !targetId) {
-      // Clean up uploaded file
       if (file.path && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
@@ -334,7 +359,6 @@ app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
       });
     }
 
-    // Validate type
     if (type !== 'channel' && type !== 'group') {
       if (file.path && fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
@@ -349,16 +373,19 @@ app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
     console.log(`Processing ${fileExt} file: ${file.originalname}`);
 
     const contacts = await parseContactFile(file.path, fileExt);
-    console.log(`Parsed ${contacts.length} contacts`);
+    console.log(`✅ Parsed ${contacts.length} contacts`);
 
     // Store contacts
     if (type === 'channel') {
       contactsDB.channels[targetId] = contacts;
-      console.log(`Stored ${contacts.length} contacts for channel: ${targetId}`);
+      console.log(`📁 Stored ${contacts.length} contacts for channel: ${targetId}`);
     } else if (type === 'group') {
       contactsDB.groups[targetId] = contacts;
-      console.log(`Stored ${contacts.length} contacts for group: ${targetId}`);
+      console.log(`📁 Stored ${contacts.length} contacts for group: ${targetId}`);
     }
+
+    // Save to file
+    saveContactsToFile();
 
     // Clean up uploaded file
     if (file.path && fs.existsSync(file.path)) {
@@ -375,15 +402,13 @@ app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
   } catch (error) {
     console.error('❌ Upload error:', error);
     
-    // Clean up file if it exists
     if (req.file && req.file.path && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
 
     res.status(500).json({ 
       success: false, 
-      error: error.message,
-      details: 'Please ensure the file format is correct and try again.'
+      error: error.message
     });
   }
 });
@@ -402,10 +427,10 @@ app.post('/api/boost', async (req, res) => {
       });
     }
 
-    if (!isConnected || !socket) {
+    if (!isConnected) {
       return res.status(400).json({ 
         success: false,
-        error: 'WhatsApp not connected. Please scan QR code first.' 
+        error: 'WhatsApp not connected. Please check terminal for QR code.' 
       });
     }
 
@@ -432,14 +457,14 @@ app.post('/api/boost', async (req, res) => {
 
     let results;
     if (type === 'channel') {
-      console.log(`Starting channel boost for: ${targetId}`);
+      console.log(`🚀 Starting channel boost for: ${targetId}`);
       results = await boostChannel(targetId, contacts);
     } else if (type === 'group') {
-      console.log(`Starting group boost for: ${targetId}`);
+      console.log(`🚀 Starting group boost for: ${targetId}`);
       results = await boostGroup(targetId, contacts);
     }
 
-    console.log(`Boost completed: ${results.success} success, ${results.failed} failed`);
+    console.log(`✅ Boost completed: ${results.success} success, ${results.failed} failed`);
 
     res.json({
       success: true,
@@ -448,7 +473,8 @@ app.post('/api/boost', async (req, res) => {
       results: {
         success: results.success,
         failed: results.failed,
-        details: results.details.slice(0, 50) // Limit response size
+        total: contacts.length,
+        details: results.details.slice(0, 50)
       }
     });
 
@@ -461,16 +487,12 @@ app.post('/api/boost', async (req, res) => {
   }
 });
 
-// Test endpoint for quick checks
-app.get('/api/test', (req, res) => {
+// Get stored contacts
+app.get('/api/contacts', (req, res) => {
   res.json({
     success: true,
-    message: 'Server is working!',
-    timestamp: new Date().toISOString(),
-    contactsDB: {
-      channels: Object.keys(contactsDB.channels),
-      groups: Object.keys(contactsDB.groups)
-    }
+    channels: Object.keys(contactsDB.channels),
+    groups: Object.keys(contactsDB.groups)
   });
 });
 
@@ -480,7 +502,6 @@ app.get('/health', (req, res) => {
     success: true,
     status: 'Server is running',
     port: PORT,
-    uploadDir: uploadDir,
     whatsapp: isConnected ? 'connected' : 'disconnected',
     time: new Date().toISOString()
   });
@@ -499,66 +520,60 @@ app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({
     success: false,
-    error: 'Internal server error',
-    message: err.message
+    error: 'Internal server error'
   });
 });
 
-// Serve the HTML file - UPDATED TO SERVE DIRECTLY
+// Serve the HTML file
 app.get('/', (req, res) => {
-  // Check if HTML file exists in current directory
   const htmlPath = path.join(__dirname, 'index.html');
   if (fs.existsSync(htmlPath)) {
     res.sendFile(htmlPath);
   } else {
-    // Fallback to public directory
-    const publicHtmlPath = path.join(__dirname, 'public', 'index.html');
-    if (fs.existsSync(publicHtmlPath)) {
-      res.sendFile(publicHtmlPath);
-    } else {
-      // Create a simple default page
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>FEE-XMD WhatsApp Booster</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
-            h1 { color: #667eea; }
-            .status { padding: 20px; background: #f0f0f0; border-radius: 10px; margin: 20px; }
-          </style>
-        </head>
-        <body>
-          <h1>FEE-XMD WhatsApp Booster</h1>
-          <div class="status">
-            <p>✅ Server is running on port ${PORT}</p>
-            <p>📁 Upload directory: ${uploadDir}</p>
-            <p>📱 WhatsApp: ${isConnected ? '✅ Connected' : '❌ Disconnected'}</p>
-            <p><a href="/api/status">Check API Status</a></p>
-            <p><a href="/api/test">Test API</a></p>
-            <p><a href="/health">Health Check</a></p>
-          </div>
-          <p>Please place your index.html file in the server directory or public folder.</p>
-        </body>
-        </html>
-      `);
-    }
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>FEE-XMD WhatsApp Booster</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+          h1 { color: #667eea; }
+          .status { padding: 20px; background: #f0f0f0; border-radius: 10px; margin: 20px; }
+          .terminal { background: #000; color: #0f0; padding: 20px; border-radius: 5px; text-align: left; font-family: monospace; }
+        </style>
+      </head>
+      <body>
+        <h1>FEE-XMD WhatsApp Booster</h1>
+        <div class="status">
+          <p>✅ Server is running on port ${PORT}</p>
+          <p>📱 WhatsApp: ${isConnected ? '✅ Connected' : '❌ Check terminal for QR code'}</p>
+          <p><a href="/api/status">Check Status</a></p>
+          <p><a href="/health">Health Check</a></p>
+        </div>
+        <div class="terminal">
+          <h3>Terminal Instructions:</h3>
+          <p>1. Check terminal for WhatsApp QR code</p>
+          <p>2. Scan QR code with WhatsApp</p>
+          <p>3. Wait for connection confirmation</p>
+          <p>4. Use web interface to upload contacts and boost</p>
+        </div>
+      </body>
+      </html>
+    `);
   }
 });
 
 // Start server
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
+  console.log(`🌐 Web Interface: http://localhost:${PORT}`);
   console.log(`📁 Upload directory: ${uploadDir}`);
-  console.log(`📂 Public directory: ${publicDir}`);
-  console.log(`🌐 Open http://localhost:${PORT} in your browser`);
-  console.log(`🔧 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔌 API Status: http://localhost:${PORT}/api/status`);
-  console.log(`🧪 API Test: http://localhost:${PORT}/api/test`);
+  console.log(`💾 Data directory: ${dataDir}`);
+  console.log(`\n=== WHATSAPP CONNECTION ===`);
   
-  // Initialize WhatsApp connection (comment/uncomment as needed)
-  // connectToWhatsApp();
+  // Load saved contacts
+  loadContactsFromFile();
+  
+  // Start WhatsApp connection
+  connectToWhatsApp();
 });
-
-// Export for testing
-module.exports = app;
