@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -66,10 +66,17 @@
 
         .status-dot.connected {
             background: #2ed573;
+            animation: pulse 1.5s infinite;
         }
 
         .status-dot.disconnected {
             background: #ff4757;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
         }
 
         .tabs {
@@ -165,6 +172,7 @@
             cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             width: 100%;
+            margin-top: 10px;
         }
 
         .btn:hover {
@@ -179,7 +187,46 @@
 
         .btn-secondary {
             background: #6c757d;
-            margin-top: 10px;
+        }
+
+        .btn-success {
+            background: #2ed573;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         .results {
@@ -229,35 +276,43 @@
             color: #ff4757;
         }
 
-        .alert {
-            padding: 12px;
+        .info-card {
+            background: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
+            margin-top: 15px;
         }
 
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .info-card h4 {
+            color: #1976d2;
+            margin-bottom: 10px;
         }
 
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
         }
 
-        .alert.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+        .info-item:last-child {
+            border-bottom: none;
         }
 
-        .alert.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+            transition: width 0.3s ease;
         }
 
         .terminal-info {
@@ -270,15 +325,75 @@
         }
 
         .instructions {
-            background: #f8f9fa;
+            background: white;
             padding: 20px;
             border-radius: 10px;
             margin-top: 20px;
+            border-left: 4px solid #667eea;
         }
 
         .instructions h3 {
             color: #667eea;
             margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .contact-preview {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            background: #f8f9fa;
+        }
+
+        .contact-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.8rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .verification-result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .verification-success {
+            border-color: #2ed573;
+            background: #f0fff4;
+        }
+
+        .verification-error {
+            border-color: #ff4757;
+            background: #fff5f5;
         }
     </style>
 </head>
@@ -286,7 +401,7 @@
     <div class="container">
         <div class="header">
             <h1>FEE-XMD WhatsApp Booster</h1>
-            <p>Boost WhatsApp channels and groups automatically</p>
+            <p>Automatically boost WhatsApp channels and groups with verified contacts</p>
         </div>
 
         <div class="dashboard">
@@ -296,13 +411,12 @@
                     <span id="statusText">Checking WhatsApp connection...</span>
                 </div>
                 <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
-                    <p>📱 WhatsApp connection is handled in terminal</p>
-                    <p>Check your server terminal for QR code</p>
+                    <p>📱 WhatsApp connection managed in terminal | Check terminal for QR code</p>
                 </div>
             </div>
 
             <div class="alert info" id="connectionAlert">
-                <strong>💡 Important:</strong> Check terminal for WhatsApp QR code
+                <strong>💡 Important:</strong> Check your server terminal for WhatsApp QR code
             </div>
 
             <div class="tabs">
@@ -310,12 +424,19 @@
                 <button class="tab" onclick="switchTab('group')">👥 Boost Group</button>
             </div>
 
+            <!-- Channel Tab -->
             <div id="channelTab">
                 <div class="form-group">
                     <label for="channelId">Channel Newsletter ID:</label>
                     <input type="text" id="channelId" placeholder="e.g., 120363423084862852@newsletter">
                     <small style="color: #666; font-size: 0.8rem;">Enter the full channel ID including @newsletter</small>
                 </div>
+
+                <button class="btn btn-secondary" onclick="verifyChannel()" id="verifyChannelBtn">
+                    🔍 Verify Channel
+                </button>
+
+                <div id="channelVerificationResult" class="verification-result" style="display: none;"></div>
 
                 <div class="form-group">
                     <label>Upload Contacts File:</label>
@@ -326,19 +447,31 @@
                         <input type="file" id="channelFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('channel')">
                     </div>
                     <div id="channelFileInfo" class="file-info"></div>
+                    <div id="channelPreview" class="contact-preview"></div>
                 </div>
 
-                <button class="btn" id="channelBoostBtn" onclick="boost('channel')">
+                <button class="btn btn-success" onclick="boostChannel()" id="channelBoostBtn">
                     🚀 Start Channel Boost
                 </button>
+
+                <div class="progress-bar" id="channelProgress" style="display: none;">
+                    <div class="progress-fill" id="channelProgressFill" style="width: 0%"></div>
+                </div>
             </div>
 
+            <!-- Group Tab -->
             <div id="groupTab" style="display: none;">
                 <div class="form-group">
                     <label for="groupId">Group Invite Code:</label>
                     <input type="text" id="groupId" placeholder="e.g., FA1GPSjfUQLCyFbquWnRIS">
                     <small style="color: #666; font-size: 0.8rem;">Enter the group invite code (without @g.us)</small>
                 </div>
+
+                <button class="btn btn-secondary" onclick="verifyGroup()" id="verifyGroupBtn">
+                    🔍 Verify Group
+                </button>
+
+                <div id="groupVerificationResult" class="verification-result" style="display: none;"></div>
 
                 <div class="form-group">
                     <label>Upload Contacts File:</label>
@@ -349,13 +482,19 @@
                         <input type="file" id="groupFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('group')">
                     </div>
                     <div id="groupFileInfo" class="file-info"></div>
+                    <div id="groupPreview" class="contact-preview"></div>
                 </div>
 
-                <button class="btn" id="groupBoostBtn" onclick="boost('group')">
+                <button class="btn btn-success" onclick="boostGroup()" id="groupBoostBtn">
                     🚀 Start Group Boost
                 </button>
+
+                <div class="progress-bar" id="groupProgress" style="display: none;">
+                    <div class="progress-fill" id="groupProgressFill" style="width: 0%"></div>
+                </div>
             </div>
 
+            <!-- Results Section -->
             <div class="results" id="results">
                 <h3>Boost Results:</h3>
                 <div id="resultDetails"></div>
@@ -369,27 +508,29 @@
                         <div>Failed</div>
                     </div>
                 </div>
+                <div id="boostInfo" class="info-card"></div>
             </div>
         </div>
 
         <div class="instructions">
             <h3>📋 How to Use:</h3>
-            <ol style="padding-left: 20px; margin-bottom: 10px;">
-                <li>Check server terminal for WhatsApp QR code</li>
-                <li>Scan QR code with your phone</li>
-                <li>Wait for "Connected to WhatsApp!" message</li>
-                <li>Enter Channel ID or Group Code</li>
+            <ol>
+                <li>Check terminal for WhatsApp QR code and scan it</li>
+                <li>Enter Channel ID or Group Invite Code</li>
+                <li>Click "Verify" to check if it exists</li>
                 <li>Upload contacts file (VCF, CSV, TXT, JSON)</li>
-                <li>Click Start Boost</li>
+                <li>Click "Start Boost" to begin automation</li>
+                <li>System will automatically check numbers and boost</li>
             </ol>
             <p style="color: #666; font-size: 0.9rem;">
-                <strong>Note:</strong> WhatsApp connection is managed in terminal, web is only for controlling boosts.
+                <strong>Note:</strong> Only numbers with WhatsApp will be boosted. System automatically verifies each number.
             </p>
         </div>
     </div>
 
     <script>
         let currentTab = 'channel';
+        let currentVerification = null;
 
         // Check WhatsApp status
         async function checkStatus() {
@@ -403,15 +544,14 @@
                 if (data.connected) {
                     statusDot.className = 'status-dot connected';
                     statusText.textContent = '✅ WhatsApp Connected';
-                    
-                    // Enable buttons
-                    document.getElementById('channelBoostBtn').disabled = false;
-                    document.getElementById('groupBoostBtn').disabled = false;
+                    showAlert('✅ WhatsApp is connected and ready for boosting', 'success');
+                } else if (data.isConnecting) {
+                    statusDot.className = 'status-dot disconnected';
+                    statusText.textContent = '⏳ Connecting to WhatsApp...';
+                    showAlert('📱 Check terminal for QR code and scan it', 'info');
                 } else {
                     statusDot.className = 'status-dot disconnected';
                     statusText.textContent = '❌ WhatsApp Not Connected';
-                    
-                    // Show alert
                     showAlert('⚠️ WhatsApp not connected. Check terminal for QR code.', 'warning');
                 }
             } catch (error) {
@@ -422,11 +562,11 @@
         // Show alert
         function showAlert(message, type = 'info') {
             const alertDiv = document.getElementById('connectionAlert');
-            alertDiv.textContent = message;
+            alertDiv.innerHTML = `<strong>${type === 'info' ? '💡' : type === 'success' ? '✅' : '⚠️'}</strong> ${message}`;
             alertDiv.className = `alert ${type}`;
             alertDiv.style.display = 'block';
             
-            if (type === 'info') {
+            if (type === 'info' || type === 'success') {
                 setTimeout(() => {
                     alertDiv.style.display = 'none';
                 }, 5000);
@@ -455,10 +595,120 @@
             document.getElementById('results').classList.remove('active');
         }
 
+        // Verify channel
+        async function verifyChannel() {
+            const channelId = document.getElementById('channelId').value.trim();
+            const verifyBtn = document.getElementById('verifyChannelBtn');
+            const resultDiv = document.getElementById('channelVerificationResult');
+            
+            if (!channelId) {
+                showAlert('Please enter a Channel ID first', 'error');
+                return;
+            }
+
+            const originalText = verifyBtn.innerHTML;
+            verifyBtn.innerHTML = '<span class="loading"></span> Verifying...';
+            verifyBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/verify/channel/${encodeURIComponent(channelId)}`);
+                const data = await response.json();
+                
+                resultDiv.style.display = 'block';
+                
+                if (data.success) {
+                    resultDiv.className = 'verification-result verification-success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Channel Verified Successfully</h4>
+                        <div class="info-item"><strong>Name:</strong> ${data.name || 'N/A'}</div>
+                        <div class="info-item"><strong>Description:</strong> ${data.description || 'N/A'}</div>
+                        <div class="info-item"><strong>Subscribers:</strong> ${data.subscribers || 'N/A'}</div>
+                        <div class="info-item"><strong>Created:</strong> ${data.createdAt ? new Date(data.createdAt * 1000).toLocaleDateString() : 'N/A'}</div>
+                    `;
+                    currentVerification = { type: 'channel', id: channelId, info: data };
+                    showAlert(`✅ Channel "${data.name}" verified successfully`, 'success');
+                } else {
+                    resultDiv.className = 'verification-result verification-error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Channel Verification Failed</h4>
+                        <p>${data.error || 'Unknown error'}</p>
+                    `;
+                    showAlert(`❌ Channel verification failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'verification-result verification-error';
+                resultDiv.innerHTML = `
+                    <h4>❌ Error Verifying Channel</h4>
+                    <p>${error.message}</p>
+                `;
+                showAlert(`❌ Error verifying channel: ${error.message}`, 'error');
+            } finally {
+                verifyBtn.innerHTML = originalText;
+                verifyBtn.disabled = false;
+            }
+        }
+
+        // Verify group
+        async function verifyGroup() {
+            const groupId = document.getElementById('groupId').value.trim();
+            const verifyBtn = document.getElementById('verifyGroupBtn');
+            const resultDiv = document.getElementById('groupVerificationResult');
+            
+            if (!groupId) {
+                showAlert('Please enter a Group Invite Code first', 'error');
+                return;
+            }
+
+            const originalText = verifyBtn.innerHTML;
+            verifyBtn.innerHTML = '<span class="loading"></span> Verifying...';
+            verifyBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/api/verify/group/${encodeURIComponent(groupId)}`);
+                const data = await response.json();
+                
+                resultDiv.style.display = 'block';
+                
+                if (data.success) {
+                    resultDiv.className = 'verification-result verification-success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Group Verified Successfully</h4>
+                        <div class="info-item"><strong>Name:</strong> ${data.subject || 'N/A'}</div>
+                        <div class="info-item"><strong>Description:</strong> ${data.description || 'N/A'}</div>
+                        <div class="info-item"><strong>Members:</strong> ${data.participants || 0}</div>
+                        <div class="info-item"><strong>Created:</strong> ${data.creation ? new Date(data.creation * 1000).toLocaleDateString() : 'N/A'}</div>
+                        <div class="info-item"><strong>Admin Only:</strong> ${data.isAnnouncement ? 'Yes' : 'No'}</div>
+                    `;
+                    currentVerification = { type: 'group', id: groupId, info: data };
+                    showAlert(`✅ Group "${data.subject}" verified successfully`, 'success');
+                } else {
+                    resultDiv.className = 'verification-result verification-error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Group Verification Failed</h4>
+                        <p>${data.error || 'Unknown error'}</p>
+                    `;
+                    showAlert(`❌ Group verification failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'verification-result verification-error';
+                resultDiv.innerHTML = `
+                    <h4>❌ Error Verifying Group</h4>
+                    <p>${error.message}</p>
+                `;
+                showAlert(`❌ Error verifying group: ${error.message}`, 'error');
+            } finally {
+                verifyBtn.innerHTML = originalText;
+                verifyBtn.disabled = false;
+            }
+        }
+
         // Handle file upload
         async function handleFileUpload(type) {
             const fileInput = document.getElementById(`${type}File`);
             const fileInfo = document.getElementById(`${type}FileInfo`);
+            const previewDiv = document.getElementById(`${type}Preview`);
             
             if (!fileInput.files.length) return;
             
@@ -489,6 +739,25 @@
                 if (data.success) {
                     fileInfo.textContent = `✅ ${data.count} contacts uploaded`;
                     fileInfo.style.color = '#2ed573';
+                    
+                    // Show preview
+                    previewDiv.innerHTML = '';
+                    if (data.contacts && data.contacts.length > 0) {
+                        data.contacts.forEach(contact => {
+                            const div = document.createElement('div');
+                            div.className = 'contact-item';
+                            div.textContent = contact;
+                            previewDiv.appendChild(div);
+                        });
+                        if (data.count > 10) {
+                            const moreDiv = document.createElement('div');
+                            moreDiv.className = 'contact-item';
+                            moreDiv.textContent = `... and ${data.count - 10} more`;
+                            moreDiv.style.fontStyle = 'italic';
+                            previewDiv.appendChild(moreDiv);
+                        }
+                    }
+                    
                     showAlert(`✅ ${data.count} contacts uploaded successfully`, 'success');
                 } else {
                     fileInfo.textContent = `❌ Upload failed`;
@@ -502,85 +771,175 @@
             }
         }
 
-        // Start boost
-        async function boost(type) {
-            const targetId = document.getElementById(`${type}Id`).value.trim();
-            const boostBtn = document.getElementById(`${type}BoostBtn`);
+        // Boost channel
+        async function boostChannel() {
+            const channelId = document.getElementById('channelId').value.trim();
+            const boostBtn = document.getElementById('channelBoostBtn');
+            const progressBar = document.getElementById('channelProgress');
+            const progressFill = document.getElementById('channelProgressFill');
             
-            if (!targetId) {
-                showAlert(`Please enter ${type === 'channel' ? 'Channel ID' : 'Group Code'}`, 'error');
+            if (!channelId) {
+                showAlert('Please enter Channel ID first', 'error');
                 return;
             }
-            
-            // Check WhatsApp connection first
+
+            // Check WhatsApp connection
             const statusResponse = await fetch('/api/status');
             const statusData = await statusResponse.json();
             
             if (!statusData.connected) {
-                showAlert('WhatsApp not connected. Check terminal for QR code.', 'error');
+                showAlert('WhatsApp not connected. Check terminal and scan QR code.', 'error');
                 return;
             }
-            
-            const originalText = boostBtn.textContent;
-            boostBtn.innerHTML = '⏳ Processing...';
+
+            const originalText = boostBtn.innerHTML;
+            boostBtn.innerHTML = '<span class="loading"></span> Boosting...';
             boostBtn.disabled = true;
             
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
             try {
-                const response = await fetch('/api/boost', {
+                const response = await fetch('/api/boost/channel', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        type: type,
-                        targetId: targetId
-                    })
+                    body: JSON.stringify({ channelId })
                 });
                 
                 const data = await response.json();
+                progressFill.style.width = '100%';
                 
                 if (data.success) {
-                    showResults(data.results);
-                    showAlert(`✅ Boost completed! ${data.results.success} successful, ${data.results.failed} failed`, 'success');
+                    showResults(data);
+                    showAlert(`✅ Channel boost completed! ${data.results.success}/${data.results.total} successful`, 'success');
                 } else {
                     showAlert(`❌ Boost failed: ${data.error}`, 'error');
                 }
             } catch (error) {
                 showAlert(`❌ Error: ${error.message}`, 'error');
             } finally {
-                boostBtn.textContent = originalText;
+                boostBtn.innerHTML = originalText;
                 boostBtn.disabled = false;
+                
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 2000);
+            }
+        }
+
+        // Boost group
+        async function boostGroup() {
+            const groupId = document.getElementById('groupId').value.trim();
+            const boostBtn = document.getElementById('groupBoostBtn');
+            const progressBar = document.getElementById('groupProgress');
+            const progressFill = document.getElementById('groupProgressFill');
+            
+            if (!groupId) {
+                showAlert('Please enter Group Invite Code first', 'error');
+                return;
+            }
+
+            // Check WhatsApp connection
+            const statusResponse = await fetch('/api/status');
+            const statusData = await statusResponse.json();
+            
+            if (!statusData.connected) {
+                showAlert('WhatsApp not connected. Check terminal and scan QR code.', 'error');
+                return;
+            }
+
+            const originalText = boostBtn.innerHTML;
+            boostBtn.innerHTML = '<span class="loading"></span> Boosting...';
+            boostBtn.disabled = true;
+            
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            try {
+                const response = await fetch('/api/boost/group', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ inviteCode: groupId })
+                });
+                
+                const data = await response.json();
+                progressFill.style.width = '100%';
+                
+                if (data.success) {
+                    showResults(data);
+                    showAlert(`✅ Group boost completed! ${data.results.success}/${data.results.total} successful`, 'success');
+                } else {
+                    showAlert(`❌ Boost failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                boostBtn.innerHTML = originalText;
+                boostBtn.disabled = false;
+                
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 2000);
             }
         }
 
         // Show results
-        function showResults(results) {
+        function showResults(data) {
             const resultsDiv = document.getElementById('results');
             const detailsDiv = document.getElementById('resultDetails');
             const successCount = document.getElementById('successCount');
             const failedCount = document.getElementById('failedCount');
+            const infoDiv = document.getElementById('boostInfo');
             
-            successCount.textContent = results.success;
-            failedCount.textContent = results.failed;
+            successCount.textContent = data.results.success;
+            failedCount.textContent = data.results.failed;
             
+            // Show target info
+            if (data.channelInfo) {
+                infoDiv.innerHTML = `
+                    <h4>📢 Channel Information</h4>
+                    <div class="info-item"><strong>Name:</strong> ${data.channelInfo.name}</div>
+                    <div class="info-item"><strong>Description:</strong> ${data.channelInfo.description || 'N/A'}</div>
+                    <div class="info-item"><strong>Subscribers:</strong> ${data.channelInfo.subscribers || 'N/A'}</div>
+                `;
+            } else if (data.groupInfo) {
+                infoDiv.innerHTML = `
+                    <h4>👥 Group Information</h4>
+                    <div class="info-item"><strong>Name:</strong> ${data.groupInfo.subject}</div>
+                    <div class="info-item"><strong>Members:</strong> ${data.groupInfo.participants}</div>
+                    <div class="info-item"><strong>Description:</strong> ${data.groupInfo.description || 'N/A'}</div>
+                `;
+            }
+            
+            // Show details
             detailsDiv.innerHTML = '';
-            if (results.details && results.details.length > 0) {
+            if (data.results.details && data.results.details.length > 0) {
                 const list = document.createElement('div');
-                results.details.slice(0, 10).forEach(detail => {
+                data.results.details.slice(0, 10).forEach(detail => {
                     const item = document.createElement('div');
-                    item.style.padding = '5px 0';
+                    item.style.padding = '8px';
                     item.style.borderBottom = '1px solid #eee';
                     item.style.color = detail.status === 'success' ? '#2ed573' : '#ff4757';
-                    item.textContent = `${detail.contact}: ${detail.message}`;
+                    item.style.fontSize = '0.9rem';
+                    item.innerHTML = `
+                        <strong>${detail.contact}</strong>: ${detail.message}
+                        <small style="color: #666; float: right;">${detail.status.toUpperCase()}</small>
+                    `;
                     list.appendChild(item);
                 });
                 
-                if (results.details.length > 10) {
+                if (data.results.details.length > 10) {
                     const more = document.createElement('div');
-                    more.style.padding = '5px 0';
+                    more.style.padding = '8px';
                     more.style.color = '#666';
                     more.style.fontStyle = 'italic';
-                    more.textContent = `... and ${results.details.length - 10} more`;
+                    more.textContent = `... and ${data.results.details.length - 10} more results`;
                     list.appendChild(more);
                 }
                 
@@ -592,9 +951,9 @@
 
         // Initialize
         async function init() {
-            // Check status every 5 seconds
+            // Check status every 3 seconds
             checkStatus();
-            setInterval(checkStatus, 5000);
+            setInterval(checkStatus, 3000);
             
             // Show initial instructions
             showAlert('Check terminal for WhatsApp QR code. Scan it to connect.', 'info');
