@@ -195,6 +195,7 @@
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            background: #cccccc;
         }
 
         .btn-secondary {
@@ -589,18 +590,12 @@
                     statusDot.className = 'status-dot connected';
                     statusText.textContent = '✅ Connected to WhatsApp';
                     qrContainer.innerHTML = '';
-
-                    // Enable boost buttons if contacts are uploaded
-                    if (uploadedContacts.channel.length > 0) {
-                        document.getElementById('channelBoostBtn').disabled = false;
-                    }
-                    if (uploadedContacts.group.length > 0) {
-                        document.getElementById('groupBoostBtn').disabled = false;
-                    }
+                    
                 } else if (data.hasQR && data.qrCode) {
                     statusDot.className = 'status-dot';
                     statusText.textContent = '📱 Scan QR Code to connect';
                     qrContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code">`;
+                    
                 } else {
                     statusDot.className = 'status-dot';
                     statusText.textContent = 'Connecting to WhatsApp...';
@@ -613,6 +608,39 @@
                 statusDot.className = 'status-dot';
                 statusText.textContent = 'WhatsApp: ❌ Connection error';
             }
+        }
+
+        // 🔴🔴🔴 FUNCTION MPYA: Update boost buttons 🔴🔴🔴
+        function updateBoostButtons() {
+            debugLog('Updating boost buttons...');
+            
+            // Check WhatsApp connection first
+            fetch('/api/status')
+                .then(res => res.json())
+                .then(data => {
+                    const isConnected = data.connected;
+                    
+                    // Update both buttons
+                    ['channel', 'group'].forEach(type => {
+                        const boostBtn = document.getElementById(`${type}BoostBtn`);
+                        const hasContacts = uploadedContacts[type] && uploadedContacts[type].length > 0;
+                        
+                        // Enable button only if BOTH conditions are met
+                        boostBtn.disabled = !(hasContacts && isConnected);
+                        
+                        if (boostBtn.disabled) {
+                            debugLog(`Button ${type} disabled: contacts=${hasContacts}, connected=${isConnected}`);
+                        } else {
+                            debugLog(`✅ Button ${type} ENABLED! (${uploadedContacts[type].length} contacts, WhatsApp connected)`);
+                        }
+                    });
+                })
+                .catch(error => {
+                    debugLog(`Error updating buttons: ${error.message}`);
+                    // Disable both buttons on error
+                    document.getElementById('channelBoostBtn').disabled = true;
+                    document.getElementById('groupBoostBtn').disabled = true;
+                });
         }
 
         // Switch between channel and group tabs
@@ -636,6 +664,9 @@
 
             // Hide previous results
             document.getElementById('results').classList.remove('active');
+            
+            // 🔴🔴🔴 UPDATE BUTTONS FOR CURRENT TAB 🔴🔴🔴
+            updateBoostButtons();
         }
 
         // Handle file upload
@@ -725,8 +756,8 @@
                     
                     showAlert(`✅ ${data.count} contacts uploaded successfully!`, 'success');
                     
-                    // Enable boost button if WhatsApp is connected
-                    checkWhatsAppStatus();
+                    // 🔴🔴🔴 ENABLE BOOST BUTTON AFTER UPLOAD 🔴🔴🔴
+                    updateBoostButtons();
                 } else {
                     fileInfo.textContent = `❌ Upload failed: ${data.error || 'Unknown error'}`;
                     fileInfo.style.color = '#ff4757';
@@ -910,9 +941,15 @@
                 // Check WhatsApp status
                 checkWhatsAppStatus();
                 
+                // 🔴🔴🔴 UPDATE BUTTONS INITIALLY 🔴🔴🔴
+                updateBoostButtons();
+                
                 // Check status periodically
                 setInterval(checkWhatsAppStatus, 5000);
                 setInterval(checkServerStatus, 10000);
+                
+                // 🔴🔴🔴 UPDATE BUTTONS PERIODICALLY TOO 🔴🔴🔴
+                setInterval(updateBoostButtons, 3000);
             }
         }
 
