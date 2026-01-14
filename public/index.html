@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FEE-XMD WhatsApp Booster</title>
+    <title>FEE-XMD Booster</title>
     <style>
         * {
             margin: 0;
@@ -11,955 +11,460 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
+        
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
-
+        
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .dashboard {
             background: white;
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
             margin-bottom: 20px;
         }
-
-        .status-card {
+        
+        .status {
             background: #f8f9ff;
+            padding: 15px;
             border-radius: 10px;
-            padding: 20px;
             margin-bottom: 20px;
             text-align: center;
         }
-
-        .status-dot {
+        
+        .status .dot {
             display: inline-block;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             margin-right: 10px;
         }
-
-        .status-dot.connected {
-            background: #2ed573;
-            animation: pulse 1.5s infinite;
-        }
-
-        .status-dot.disconnected {
-            background: #ff4757;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
-
+        
+        .connected { background: #2ed573; }
+        .disconnected { background: #ff4757; }
+        
         .tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
         }
-
+        
         .tab {
             flex: 1;
             padding: 15px;
             background: #f1f3f9;
             border: none;
             border-radius: 10px;
-            color: #333;
-            font-size: 1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-weight: bold;
         }
-
-        .tab:hover {
-            background: #e4e8f6;
-        }
-
+        
         .tab.active {
             background: #667eea;
             color: white;
-            font-weight: bold;
         }
-
+        
         .form-group {
             margin-bottom: 20px;
         }
-
-        .form-group label {
+        
+        label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             color: #333;
         }
-
-        .form-group input {
+        
+        input[type="text"] {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
+            font-size: 16px;
         }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
+        
         .file-upload {
             border: 2px dashed #667eea;
             border-radius: 8px;
             padding: 30px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
-
+        
         .file-upload:hover {
             background: #f8f9ff;
         }
-
+        
         .file-upload input {
             display: none;
         }
-
-        .upload-icon {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .file-info {
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
+        
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             padding: 15px 30px;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
             width: 100%;
-            margin-top: 10px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-        }
-
-        .btn-success {
-            background: #2ed573;
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .alert {
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .alert.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .alert.warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .results {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9ff;
-            border-radius: 10px;
-            display: none;
-        }
-
-        .results.active {
-            display: block;
-            animation: slideDown 0.5s ease;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
             margin-top: 20px;
         }
-
-        .stat-card {
-            background: white;
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .results {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .queue-info {
+            background: #e8f4fd;
             padding: 15px;
             border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-success .stat-number {
-            color: #2ed573;
-        }
-
-        .stat-failed .stat-number {
-            color: #ff4757;
-        }
-
-        .info-card {
-            background: #e8f4fd;
+            margin-top: 20px;
             border-left: 4px solid #2196f3;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
         }
-
-        .info-card h4 {
-            color: #1976d2;
-            margin-bottom: 10px;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-
-        .info-item:last-child {
-            border-bottom: none;
-        }
-
-        .progress-bar {
-            height: 10px;
-            background: #e0e0e0;
-            border-radius: 5px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 5px;
-            transition: width 0.3s ease;
-        }
-
-        .terminal-info {
+        
+        .terminal-note {
             background: #1a1a1a;
             color: #00ff00;
             padding: 15px;
             border-radius: 8px;
+            margin-top: 20px;
             font-family: monospace;
-            margin-top: 20px;
-        }
-
-        .instructions {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border-left: 4px solid #667eea;
-        }
-
-        .instructions h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .instructions ol {
-            padding-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .instructions li {
-            margin-bottom: 5px;
-        }
-
-        .contact-preview {
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
-            background: #f8f9fa;
-        }
-
-        .contact-item {
-            padding: 5px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.8rem;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .verification-result {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid #dee2e6;
-        }
-
-        .verification-success {
-            border-color: #2ed573;
-            background: #f0fff4;
-        }
-
-        .verification-error {
-            border-color: #ff4757;
-            background: #fff5f5;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>FEE-XMD WhatsApp Booster</h1>
-            <p>Automatically boost WhatsApp channels and groups with verified contacts</p>
+        <h1>FEE-XMD WhatsApp Booster</h1>
+        
+        <div class="status">
+            <span class="dot disconnected" id="statusDot"></span>
+            <span id="statusText">Checking connection...</span>
         </div>
-
-        <div class="dashboard">
-            <div class="status-card">
-                <div id="statusContainer">
-                    <span class="status-dot disconnected" id="statusDot"></span>
-                    <span id="statusText">Checking WhatsApp connection...</span>
-                </div>
-                <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
-                    <p>📱 WhatsApp connection managed in terminal | Check terminal for QR code</p>
-                </div>
-            </div>
-
-            <div class="alert info" id="connectionAlert">
-                <strong>💡 Important:</strong> Check your server terminal for WhatsApp QR code
-            </div>
-
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('channel')">📢 Boost Channel</button>
-                <button class="tab" onclick="switchTab('group')">👥 Boost Group</button>
-            </div>
-
-            <!-- Channel Tab -->
-            <div id="channelTab">
-                <div class="form-group">
-                    <label for="channelId">Channel Newsletter ID:</label>
-                    <input type="text" id="channelId" placeholder="e.g., 120363423084862852@newsletter">
-                    <small style="color: #666; font-size: 0.8rem;">Enter the full channel ID including @newsletter</small>
-                </div>
-
-                <button class="btn btn-secondary" onclick="verifyChannel()" id="verifyChannelBtn">
-                    🔍 Verify Channel
-                </button>
-
-                <div id="channelVerificationResult" class="verification-result" style="display: none;"></div>
-
-                <div class="form-group">
-                    <label>Upload Contacts File:</label>
-                    <div class="file-upload" onclick="document.getElementById('channelFile').click()">
-                        <div class="upload-icon">📁</div>
-                        <p>Click to upload contacts file</p>
-                        <p class="file-info">Supported formats: VCF, JSON, CSV, TXT</p>
-                        <input type="file" id="channelFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('channel')">
-                    </div>
-                    <div id="channelFileInfo" class="file-info"></div>
-                    <div id="channelPreview" class="contact-preview"></div>
-                </div>
-
-                <button class="btn btn-success" onclick="boostChannel()" id="channelBoostBtn">
-                    🚀 Start Channel Boost
-                </button>
-
-                <div class="progress-bar" id="channelProgress" style="display: none;">
-                    <div class="progress-fill" id="channelProgressFill" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <!-- Group Tab -->
-            <div id="groupTab" style="display: none;">
-                <div class="form-group">
-                    <label for="groupId">Group Invite Code:</label>
-                    <input type="text" id="groupId" placeholder="e.g., FA1GPSjfUQLCyFbquWnRIS">
-                    <small style="color: #666; font-size: 0.8rem;">Enter the group invite code (without @g.us)</small>
-                </div>
-
-                <button class="btn btn-secondary" onclick="verifyGroup()" id="verifyGroupBtn">
-                    🔍 Verify Group
-                </button>
-
-                <div id="groupVerificationResult" class="verification-result" style="display: none;"></div>
-
-                <div class="form-group">
-                    <label>Upload Contacts File:</label>
-                    <div class="file-upload" onclick="document.getElementById('groupFile').click()">
-                        <div class="upload-icon">📁</div>
-                        <p>Click to upload contacts file</p>
-                        <p class="file-info">Supported formats: VCF, JSON, CSV, TXT</p>
-                        <input type="file" id="groupFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('group')">
-                    </div>
-                    <div id="groupFileInfo" class="file-info"></div>
-                    <div id="groupPreview" class="contact-preview"></div>
-                </div>
-
-                <button class="btn btn-success" onclick="boostGroup()" id="groupBoostBtn">
-                    🚀 Start Group Boost
-                </button>
-
-                <div class="progress-bar" id="groupProgress" style="display: none;">
-                    <div class="progress-fill" id="groupProgressFill" style="width: 0%"></div>
-                </div>
-            </div>
-
-            <!-- Results Section -->
-            <div class="results" id="results">
-                <h3>Boost Results:</h3>
-                <div id="resultDetails"></div>
-                <div class="stats">
-                    <div class="stat-card stat-success">
-                        <div class="stat-number" id="successCount">0</div>
-                        <div>Successful</div>
-                    </div>
-                    <div class="stat-card stat-failed">
-                        <div class="stat-number" id="failedCount">0</div>
-                        <div>Failed</div>
-                    </div>
-                </div>
-                <div id="boostInfo" class="info-card"></div>
-            </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('group')">👥 Boost Group</button>
+            <button class="tab" onclick="showTab('channel')">📢 Boost Channel</button>
         </div>
-
-        <div class="instructions">
-            <h3>📋 How to Use:</h3>
-            <ol>
-                <li>Check terminal for WhatsApp QR code and scan it</li>
-                <li>Enter Channel ID or Group Invite Code</li>
-                <li>Click "Verify" to check if it exists</li>
-                <li>Upload contacts file (VCF, CSV, TXT, JSON)</li>
-                <li>Click "Start Boost" to begin automation</li>
-                <li>System will automatically check numbers and boost</li>
-            </ol>
-            <p style="color: #666; font-size: 0.9rem;">
-                <strong>Note:</strong> Only numbers with WhatsApp will be boosted. System automatically verifies each number.
-            </p>
+        
+        <!-- Group Tab -->
+        <div id="groupTab">
+            <div class="form-group">
+                <label for="groupInviteCode">Group Invite Code:</label>
+                <input type="text" id="groupInviteCode" placeholder="e.g., FA1GPSjfUQLCyFbquWnRIS">
+            </div>
+            
+            <div class="form-group">
+                <label>Upload Contacts File:</label>
+                <div class="file-upload" onclick="document.getElementById('groupFile').click()">
+                    <div>📁 Click to upload file</div>
+                    <div style="font-size: 14px; color: #666; margin-top: 10px;">
+                        Supported: TXT, CSV, JSON
+                    </div>
+                    <input type="file" id="groupFile" accept=".txt,.csv,.json" onchange="handleFileSelect('group')">
+                </div>
+                <div id="groupFileInfo" style="margin-top: 10px; color: #666;"></div>
+            </div>
+            
+            <button class="btn" onclick="uploadGroup()">🚀 Add to Boost Queue</button>
+        </div>
+        
+        <!-- Channel Tab -->
+        <div id="channelTab" style="display: none;">
+            <div class="form-group">
+                <label for="channelId">Channel Newsletter ID:</label>
+                <input type="text" id="channelId" placeholder="e.g., 120363423084862852@newsletter">
+            </div>
+            
+            <div class="form-group">
+                <label>Upload Contacts File:</label>
+                <div class="file-upload" onclick="document.getElementById('channelFile').click()">
+                    <div>📁 Click to upload file</div>
+                    <div style="font-size: 14px; color: #666; margin-top: 10px;">
+                        Supported: TXT, CSV, JSON
+                    </div>
+                    <input type="file" id="channelFile" accept=".txt,.csv,.json" onchange="handleFileSelect('channel')">
+                </div>
+                <div id="channelFileInfo" style="margin-top: 10px; color: #666;"></div>
+            </div>
+            
+            <button class="btn" onclick="uploadChannel()">🚀 Add to Boost Queue</button>
+        </div>
+        
+        <!-- Results -->
+        <div class="results" id="results">
+            <h3>Upload Results</h3>
+            <div id="resultContent"></div>
+        </div>
+        
+        <!-- Queue Info -->
+        <div class="queue-info">
+            <h3>📋 Boost Queue</h3>
+            <div id="queueContent">Loading queue...</div>
+            <button onclick="clearQueue()" style="margin-top: 10px; padding: 10px; background: #ff4757; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Clear Queue
+            </button>
+        </div>
+        
+        <!-- Terminal Note -->
+        <div class="terminal-note">
+            <strong>⚠️ IMPORTANT:</strong><br>
+            1. Check TERMINAL for WhatsApp QR code<br>
+            2. Scan QR code with your phone<br>
+            3. Wait for "✅ WhatsApp Connected!" message<br>
+            4. System will automatically process boost queue<br>
+            5. Watch terminal for real-time progress
         </div>
     </div>
-
+    
     <script>
-        let currentTab = 'channel';
-        let currentVerification = null;
-
-        // Check WhatsApp status
+        let currentTab = 'group';
+        
+        // Check status
         async function checkStatus() {
             try {
                 const response = await fetch('/api/status');
                 const data = await response.json();
                 
-                const statusDot = document.getElementById('statusDot');
-                const statusText = document.getElementById('statusText');
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
                 
                 if (data.connected) {
-                    statusDot.className = 'status-dot connected';
-                    statusText.textContent = '✅ WhatsApp Connected';
-                    showAlert('✅ WhatsApp is connected and ready for boosting', 'success');
-                } else if (data.isConnecting) {
-                    statusDot.className = 'status-dot disconnected';
-                    statusText.textContent = '⏳ Connecting to WhatsApp...';
-                    showAlert('📱 Check terminal for QR code and scan it', 'info');
+                    dot.className = 'dot connected';
+                    text.textContent = '✅ WhatsApp Connected - Ready to boost';
                 } else {
-                    statusDot.className = 'status-dot disconnected';
-                    statusText.textContent = '❌ WhatsApp Not Connected';
-                    showAlert('⚠️ WhatsApp not connected. Check terminal for QR code.', 'warning');
+                    dot.className = 'dot disconnected';
+                    text.textContent = '❌ WhatsApp Not Connected - Check terminal';
                 }
+                
+                // Update queue
+                updateQueue();
             } catch (error) {
-                console.error('Error checking status:', error);
+                console.error('Status check error:', error);
             }
         }
-
-        // Show alert
-        function showAlert(message, type = 'info') {
-            const alertDiv = document.getElementById('connectionAlert');
-            alertDiv.innerHTML = `<strong>${type === 'info' ? '💡' : type === 'success' ? '✅' : '⚠️'}</strong> ${message}`;
-            alertDiv.className = `alert ${type}`;
-            alertDiv.style.display = 'block';
-            
-            if (type === 'info' || type === 'success') {
-                setTimeout(() => {
-                    alertDiv.style.display = 'none';
-                }, 5000);
-            }
-        }
-
-        // Switch tabs
-        function switchTab(tab) {
+        
+        // Show tab
+        function showTab(tab) {
             currentTab = tab;
             
-            // Update tab buttons
+            // Update tabs
             document.querySelectorAll('.tab').forEach(t => {
                 t.classList.remove('active');
-                if (t.textContent.includes(tab === 'channel' ? 'Channel' : 'Group')) {
+                if (t.textContent.includes(tab === 'group' ? 'Group' : 'Channel')) {
                     t.classList.add('active');
                 }
             });
-
-            // Show/hide tabs
-            document.getElementById('channelTab').style.display = 
-                tab === 'channel' ? 'block' : 'none';
-            document.getElementById('groupTab').style.display = 
-                tab === 'group' ? 'block' : 'none';
-
-            // Hide results
-            document.getElementById('results').classList.remove('active');
-        }
-
-        // Verify channel
-        async function verifyChannel() {
-            const channelId = document.getElementById('channelId').value.trim();
-            const verifyBtn = document.getElementById('verifyChannelBtn');
-            const resultDiv = document.getElementById('channelVerificationResult');
             
-            if (!channelId) {
-                showAlert('Please enter a Channel ID first', 'error');
-                return;
-            }
-
-            const originalText = verifyBtn.innerHTML;
-            verifyBtn.innerHTML = '<span class="loading"></span> Verifying...';
-            verifyBtn.disabled = true;
-
-            try {
-                const response = await fetch(`/api/verify/channel/${encodeURIComponent(channelId)}`);
-                const data = await response.json();
-                
-                resultDiv.style.display = 'block';
-                
-                if (data.success) {
-                    resultDiv.className = 'verification-result verification-success';
-                    resultDiv.innerHTML = `
-                        <h4>✅ Channel Verified Successfully</h4>
-                        <div class="info-item"><strong>Name:</strong> ${data.name || 'N/A'}</div>
-                        <div class="info-item"><strong>Description:</strong> ${data.description || 'N/A'}</div>
-                        <div class="info-item"><strong>Subscribers:</strong> ${data.subscribers || 'N/A'}</div>
-                        <div class="info-item"><strong>Created:</strong> ${data.createdAt ? new Date(data.createdAt * 1000).toLocaleDateString() : 'N/A'}</div>
-                    `;
-                    currentVerification = { type: 'channel', id: channelId, info: data };
-                    showAlert(`✅ Channel "${data.name}" verified successfully`, 'success');
-                } else {
-                    resultDiv.className = 'verification-result verification-error';
-                    resultDiv.innerHTML = `
-                        <h4>❌ Channel Verification Failed</h4>
-                        <p>${data.error || 'Unknown error'}</p>
-                    `;
-                    showAlert(`❌ Channel verification failed: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                resultDiv.style.display = 'block';
-                resultDiv.className = 'verification-result verification-error';
-                resultDiv.innerHTML = `
-                    <h4>❌ Error Verifying Channel</h4>
-                    <p>${error.message}</p>
-                `;
-                showAlert(`❌ Error verifying channel: ${error.message}`, 'error');
-            } finally {
-                verifyBtn.innerHTML = originalText;
-                verifyBtn.disabled = false;
-            }
+            // Show/hide content
+            document.getElementById('groupTab').style.display = tab === 'group' ? 'block' : 'none';
+            document.getElementById('channelTab').style.display = tab === 'channel' ? 'block' : 'none';
         }
-
-        // Verify group
-        async function verifyGroup() {
-            const groupId = document.getElementById('groupId').value.trim();
-            const verifyBtn = document.getElementById('verifyGroupBtn');
-            const resultDiv = document.getElementById('groupVerificationResult');
-            
-            if (!groupId) {
-                showAlert('Please enter a Group Invite Code first', 'error');
-                return;
-            }
-
-            const originalText = verifyBtn.innerHTML;
-            verifyBtn.innerHTML = '<span class="loading"></span> Verifying...';
-            verifyBtn.disabled = true;
-
-            try {
-                const response = await fetch(`/api/verify/group/${encodeURIComponent(groupId)}`);
-                const data = await response.json();
-                
-                resultDiv.style.display = 'block';
-                
-                if (data.success) {
-                    resultDiv.className = 'verification-result verification-success';
-                    resultDiv.innerHTML = `
-                        <h4>✅ Group Verified Successfully</h4>
-                        <div class="info-item"><strong>Name:</strong> ${data.subject || 'N/A'}</div>
-                        <div class="info-item"><strong>Description:</strong> ${data.description || 'N/A'}</div>
-                        <div class="info-item"><strong>Members:</strong> ${data.participants || 0}</div>
-                        <div class="info-item"><strong>Created:</strong> ${data.creation ? new Date(data.creation * 1000).toLocaleDateString() : 'N/A'}</div>
-                        <div class="info-item"><strong>Admin Only:</strong> ${data.isAnnouncement ? 'Yes' : 'No'}</div>
-                    `;
-                    currentVerification = { type: 'group', id: groupId, info: data };
-                    showAlert(`✅ Group "${data.subject}" verified successfully`, 'success');
-                } else {
-                    resultDiv.className = 'verification-result verification-error';
-                    resultDiv.innerHTML = `
-                        <h4>❌ Group Verification Failed</h4>
-                        <p>${data.error || 'Unknown error'}</p>
-                    `;
-                    showAlert(`❌ Group verification failed: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                resultDiv.style.display = 'block';
-                resultDiv.className = 'verification-result verification-error';
-                resultDiv.innerHTML = `
-                    <h4>❌ Error Verifying Group</h4>
-                    <p>${error.message}</p>
-                `;
-                showAlert(`❌ Error verifying group: ${error.message}`, 'error');
-            } finally {
-                verifyBtn.innerHTML = originalText;
-                verifyBtn.disabled = false;
-            }
-        }
-
-        // Handle file upload
-        async function handleFileUpload(type) {
+        
+        // Handle file selection
+        function handleFileSelect(type) {
             const fileInput = document.getElementById(`${type}File`);
             const fileInfo = document.getElementById(`${type}FileInfo`);
-            const previewDiv = document.getElementById(`${type}Preview`);
             
-            if (!fileInput.files.length) return;
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            }
+        }
+        
+        // Upload group
+        async function uploadGroup() {
+            const inviteCode = document.getElementById('groupInviteCode').value.trim();
+            const fileInput = document.getElementById('groupFile');
             
-            const file = fileInput.files[0];
-            const targetId = document.getElementById(`${type}Id`).value.trim();
-            
-            if (!targetId) {
-                showAlert(`Please enter ${type === 'channel' ? 'Channel ID' : 'Group Code'} first`, 'error');
+            if (!inviteCode) {
+                alert('Please enter group invite code');
                 return;
             }
             
-            fileInfo.textContent = `Uploading ${file.name}...`;
-            fileInfo.style.color = '#667eea';
+            if (!fileInput.files.length) {
+                alert('Please select a file');
+                return;
+            }
             
             const formData = new FormData();
-            formData.append('file', file);
-            formData.append('type', type);
-            formData.append('targetId', targetId);
+            formData.append('file', fileInput.files[0]);
+            formData.append('inviteCode', inviteCode);
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
             
             try {
-                const response = await fetch('/api/upload-contacts', {
+                const response = await fetch('/api/upload-group', {
                     method: 'POST',
                     body: formData
                 });
                 
                 const data = await response.json();
                 
+                showResult(data.success ? 'success' : 'error', data.message || data.error);
+                
                 if (data.success) {
-                    fileInfo.textContent = `✅ ${data.count} contacts uploaded`;
-                    fileInfo.style.color = '#2ed573';
-                    
-                    // Show preview
-                    previewDiv.innerHTML = '';
-                    if (data.contacts && data.contacts.length > 0) {
-                        data.contacts.forEach(contact => {
-                            const div = document.createElement('div');
-                            div.className = 'contact-item';
-                            div.textContent = contact;
-                            previewDiv.appendChild(div);
-                        });
-                        if (data.count > 10) {
-                            const moreDiv = document.createElement('div');
-                            moreDiv.className = 'contact-item';
-                            moreDiv.textContent = `... and ${data.count - 10} more`;
-                            moreDiv.style.fontStyle = 'italic';
-                            previewDiv.appendChild(moreDiv);
-                        }
-                    }
-                    
-                    showAlert(`✅ ${data.count} contacts uploaded successfully`, 'success');
-                } else {
-                    fileInfo.textContent = `❌ Upload failed`;
-                    fileInfo.style.color = '#ff4757';
-                    showAlert(`❌ Upload failed: ${data.error}`, 'error');
+                    document.getElementById('groupInviteCode').value = '';
+                    fileInput.value = '';
+                    document.getElementById('groupFileInfo').textContent = '';
+                    updateQueue();
                 }
             } catch (error) {
-                fileInfo.textContent = `❌ Upload error`;
-                fileInfo.style.color = '#ff4757';
-                showAlert(`❌ Upload error: ${error.message}`, 'error');
+                showResult('error', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Add to Boost Queue';
             }
         }
-
-        // Boost channel
-        async function boostChannel() {
+        
+        // Upload channel
+        async function uploadChannel() {
             const channelId = document.getElementById('channelId').value.trim();
-            const boostBtn = document.getElementById('channelBoostBtn');
-            const progressBar = document.getElementById('channelProgress');
-            const progressFill = document.getElementById('channelProgressFill');
+            const fileInput = document.getElementById('channelFile');
             
             if (!channelId) {
-                showAlert('Please enter Channel ID first', 'error');
+                alert('Please enter channel ID');
                 return;
             }
-
-            // Check WhatsApp connection
-            const statusResponse = await fetch('/api/status');
-            const statusData = await statusResponse.json();
             
-            if (!statusData.connected) {
-                showAlert('WhatsApp not connected. Check terminal and scan QR code.', 'error');
+            if (!fileInput.files.length) {
+                alert('Please select a file');
                 return;
             }
-
-            const originalText = boostBtn.innerHTML;
-            boostBtn.innerHTML = '<span class="loading"></span> Boosting...';
-            boostBtn.disabled = true;
             
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('channelId', channelId);
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
+            
             try {
-                const response = await fetch('/api/boost/channel', {
+                const response = await fetch('/api/upload-channel', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ channelId })
+                    body: formData
                 });
                 
                 const data = await response.json();
-                progressFill.style.width = '100%';
+                
+                showResult(data.success ? 'success' : 'error', data.message || data.error);
                 
                 if (data.success) {
-                    showResults(data);
-                    showAlert(`✅ Channel boost completed! ${data.results.success}/${data.results.total} successful`, 'success');
-                } else {
-                    showAlert(`❌ Boost failed: ${data.error}`, 'error');
+                    document.getElementById('channelId').value = '';
+                    fileInput.value = '';
+                    document.getElementById('channelFileInfo').textContent = '';
+                    updateQueue();
                 }
             } catch (error) {
-                showAlert(`❌ Error: ${error.message}`, 'error');
+                showResult('error', error.message);
             } finally {
-                boostBtn.innerHTML = originalText;
-                boostBtn.disabled = false;
-                
-                setTimeout(() => {
-                    progressBar.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }, 2000);
+                btn.disabled = false;
+                btn.textContent = '🚀 Add to Boost Queue';
             }
         }
-
-        // Boost group
-        async function boostGroup() {
-            const groupId = document.getElementById('groupId').value.trim();
-            const boostBtn = document.getElementById('groupBoostBtn');
-            const progressBar = document.getElementById('groupProgress');
-            const progressFill = document.getElementById('groupProgressFill');
-            
-            if (!groupId) {
-                showAlert('Please enter Group Invite Code first', 'error');
-                return;
-            }
-
-            // Check WhatsApp connection
-            const statusResponse = await fetch('/api/status');
-            const statusData = await statusResponse.json();
-            
-            if (!statusData.connected) {
-                showAlert('WhatsApp not connected. Check terminal and scan QR code.', 'error');
-                return;
-            }
-
-            const originalText = boostBtn.innerHTML;
-            boostBtn.innerHTML = '<span class="loading"></span> Boosting...';
-            boostBtn.disabled = true;
-            
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-
-            try {
-                const response = await fetch('/api/boost/group', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ inviteCode: groupId })
-                });
-                
-                const data = await response.json();
-                progressFill.style.width = '100%';
-                
-                if (data.success) {
-                    showResults(data);
-                    showAlert(`✅ Group boost completed! ${data.results.success}/${data.results.total} successful`, 'success');
-                } else {
-                    showAlert(`❌ Boost failed: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                showAlert(`❌ Error: ${error.message}`, 'error');
-            } finally {
-                boostBtn.innerHTML = originalText;
-                boostBtn.disabled = false;
-                
-                setTimeout(() => {
-                    progressBar.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }, 2000);
-            }
-        }
-
-        // Show results
-        function showResults(data) {
+        
+        // Show result
+        function showResult(type, message) {
             const resultsDiv = document.getElementById('results');
-            const detailsDiv = document.getElementById('resultDetails');
-            const successCount = document.getElementById('successCount');
-            const failedCount = document.getElementById('failedCount');
-            const infoDiv = document.getElementById('boostInfo');
+            const contentDiv = document.getElementById('resultContent');
             
-            successCount.textContent = data.results.success;
-            failedCount.textContent = data.results.failed;
+            contentDiv.innerHTML = `
+                <div style="color: ${type === 'success' ? '#2ed573' : '#ff4757'}; padding: 10px;">
+                    ${message}
+                </div>
+            `;
             
-            // Show target info
-            if (data.channelInfo) {
-                infoDiv.innerHTML = `
-                    <h4>📢 Channel Information</h4>
-                    <div class="info-item"><strong>Name:</strong> ${data.channelInfo.name}</div>
-                    <div class="info-item"><strong>Description:</strong> ${data.channelInfo.description || 'N/A'}</div>
-                    <div class="info-item"><strong>Subscribers:</strong> ${data.channelInfo.subscribers || 'N/A'}</div>
-                `;
-            } else if (data.groupInfo) {
-                infoDiv.innerHTML = `
-                    <h4>👥 Group Information</h4>
-                    <div class="info-item"><strong>Name:</strong> ${data.groupInfo.subject}</div>
-                    <div class="info-item"><strong>Members:</strong> ${data.groupInfo.participants}</div>
-                    <div class="info-item"><strong>Description:</strong> ${data.groupInfo.description || 'N/A'}</div>
-                `;
-            }
+            resultsDiv.classList.add('show');
             
-            // Show details
-            detailsDiv.innerHTML = '';
-            if (data.results.details && data.results.details.length > 0) {
-                const list = document.createElement('div');
-                data.results.details.slice(0, 10).forEach(detail => {
-                    const item = document.createElement('div');
-                    item.style.padding = '8px';
-                    item.style.borderBottom = '1px solid #eee';
-                    item.style.color = detail.status === 'success' ? '#2ed573' : '#ff4757';
-                    item.style.fontSize = '0.9rem';
-                    item.innerHTML = `
-                        <strong>${detail.contact}</strong>: ${detail.message}
-                        <small style="color: #666; float: right;">${detail.status.toUpperCase()}</small>
-                    `;
-                    list.appendChild(item);
-                });
+            setTimeout(() => {
+                resultsDiv.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Update queue
+        async function updateQueue() {
+            try {
+                const response = await fetch('/api/queue');
+                const data = await response.json();
                 
-                if (data.results.details.length > 10) {
-                    const more = document.createElement('div');
-                    more.style.padding = '8px';
-                    more.style.color = '#666';
-                    more.style.fontStyle = 'italic';
-                    more.textContent = `... and ${data.results.details.length - 10} more results`;
-                    list.appendChild(more);
+                let html = '';
+                
+                if (data.groups.length > 0) {
+                    html += '<h4>Groups:</h4>';
+                    data.groups.forEach(g => {
+                        html += `<div>📦 ${g.inviteCode} - ${g.count} contacts</div>`;
+                    });
                 }
                 
-                detailsDiv.appendChild(list);
+                if (data.channels.length > 0) {
+                    html += '<h4>Channels:</h4>';
+                    data.channels.forEach(c => {
+                        html += `<div>📢 ${c.id} - ${c.count} contacts</div>`;
+                    });
+                }
+                
+                if (data.groups.length === 0 && data.channels.length === 0) {
+                    html = '<div>No items in queue</div>';
+                }
+                
+                document.getElementById('queueContent').innerHTML = html;
+            } catch (error) {
+                console.error('Queue update error:', error);
             }
-            
-            resultsDiv.classList.add('active');
         }
-
+        
+        // Clear queue
+        async function clearQueue() {
+            if (!confirm('Are you sure you want to clear the boost queue?')) return;
+            
+            try {
+                const response = await fetch('/api/clear-queue', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateQueue();
+                    showResult('success', 'Queue cleared successfully');
+                }
+            } catch (error) {
+                showResult('error', error.message);
+            }
+        }
+        
         // Initialize
-        async function init() {
-            // Check status every 3 seconds
+        function init() {
             checkStatus();
-            setInterval(checkStatus, 3000);
-            
-            // Show initial instructions
-            showAlert('Check terminal for WhatsApp QR code. Scan it to connect.', 'info');
+            setInterval(checkStatus, 5000);
+            updateQueue();
         }
-
-        // Start when page loads
+        
+        // Start on load
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
