@@ -52,9 +52,10 @@ const contactsDB = {
   groups: {}
 };
 
+// Function to parse contact files
 async function parseContactFile(filePath, fileType) {
   const contacts = [];
-  
+
   try {
     switch (fileType) {
       case 'vcf':
@@ -67,7 +68,7 @@ async function parseContactFile(filePath, fileType) {
           }
         });
         break;
-        
+
       case 'json':
         const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         jsonData.forEach(item => {
@@ -77,7 +78,7 @@ async function parseContactFile(filePath, fileType) {
           }
         });
         break;
-        
+
       case 'csv':
         await new Promise((resolve, reject) => {
           fs.createReadStream(filePath)
@@ -96,7 +97,7 @@ async function parseContactFile(filePath, fileType) {
             .on('error', reject);
         });
         break;
-        
+
       case 'txt':
         const textContent = fs.readFileSync(filePath, 'utf8');
         const lines = textContent.split('\n');
@@ -105,125 +106,68 @@ async function parseContactFile(filePath, fileType) {
           if (phone.length >= 10) contacts.push(phone);
         });
         break;
+        
+      default:
+        throw new Error(`Unsupported file type: ${fileType}`);
     }
   } catch (error) {
     console.error('Error parsing file:', error);
     throw new Error(`Failed to parse ${fileType} file: ${error.message}`);
   }
-  
+
   return [...new Set(contacts)]; // Remove duplicates
 }
 
-// API Routes with better error handling
-app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
-  try {
-    const { type, targetId } = req.body;
-    const file = req.file;
-    
-    if (!file) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'No file uploaded. Please select a file.' 
-      });
-    }
-    
-    if (!type || !targetId) {
-      // Clean up uploaded file
-      if (file.path) fs.unlinkSync(file.path);
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Missing required fields: type and targetId' 
-      });
-    }
-    
-    const fileExt = path.extname(file.originalname).toLowerCase().substring(1);
-    console.log(`Processing ${fileExt} file: ${file.originalname}`);
-    
-    const contacts = await parseContactFile(file.path, fileExt);
-    
-    // Store contacts
-    if (type === 'channel') {
-      contactsDB.channels[targetId] = contacts;
-    } else if (type === 'group') {
-      contactsDB.groups[targetId] = contacts;
-    }
-    
-    // Clean up uploaded file
-    fs.unlinkSync(file.path);
-    
-    res.json({
-      success: true,
-      count: contacts.length,
-      contacts: contacts.slice(0, 10),
-      message: `Successfully parsed ${contacts.length} contacts`
-    });
-    
-  } catch (error) {
-    // Clean up file if it exists
-    if (req.file && req.file.path) {
-      fs.unlinkSync(req.file.path);
-    }
-    
-    console.error('Upload error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message,
-      details: 'Please ensure the file format is correct and try again.'
-    });
-  }
-});
-
-// Add error handling middleware
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    return res.status(400).json({
-      success: false,
-      error: `File upload error: ${err.message}`
-    });
-  }
-  next(err);
-});
-
-
 // WhatsApp Connection Handler
 async function connectToWhatsApp() {
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
-  socket = makeWASocket({
-    auth: state,
-    printQRInTerminal: true,
-    browser: ['FEE-XMD Booster', 'Chrome', '1.0.0']
-  });
+    socket = makeWASocket({
+      auth: state,
+      printQRInTerminal: true,
+      browser: ['FEE-XMD Booster', 'Chrome', '1.0.0']
+    });
 
-  socket.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
+    socket.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-    if (qr) {
-      qrCode = await QRCode.toDataURL(qr);
-      console.log('QR Code generated');
-    }
-
-    if (connection === 'close') {
-      const shouldReconnect = 
-        new Boom(lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-
-      if (shouldReconnect) {
-        connectToWhatsApp();
+      if (qr) {
+        try {
+          qrCode = await QRCode.toDataURL(qr);
+          console.log('QR Code generated');
+        } catch (error) {
+          console.error('Error generating QR code:', error);
+        }
       }
-      isConnected = false;
-    } else if (connection === 'open') {
-      isConnected = true;
-      console.log('✅ Connected to WhatsApp!');
-      qrCode = null;
-    }
-  });
 
-  socket.ev.on('creds.update', saveCreds);
+      if (connection === 'close') {
+        const shouldReconnect = 
+          new Boom(lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+
+        if (shouldReconnect) {
+          setTimeout(() => connectToWhatsApp(), 3000);
+        }
+        isConnected = false;
+        console.log('❌ WhatsApp disconnected');
+      } else if (connection === 'open') {
+        isConnected = true;
+        console.log('✅ Connected to WhatsApp!');
+        qrCode = null;
+      }
+    });
+
+    socket.ev.on('creds.update', saveCreds);
+  } catch (error) {
+    console.error('Error connecting to WhatsApp:', error);
+  }
 }
 
 // Boost Channel Function
 async function boostChannel(channelId, contacts) {
-  if (!isConnected) throw new Error('WhatsApp not connected');
+  if (!isConnected || !socket) {
+    throw new Error('WhatsApp not connected');
+  }
 
   const results = {
     success: 0,
@@ -233,8 +177,6 @@ async function boostChannel(channelId, contacts) {
 
   for (const contact of contacts) {
     try {
-      const jid = `${contact}@s.whatsapp.net`;
-
       // Follow newsletter/channel
       await socket.newsletterFollow(channelId);
 
@@ -263,7 +205,9 @@ async function boostChannel(channelId, contacts) {
 
 // Boost Group Function
 async function boostGroup(groupInviteCode, contacts) {
-  if (!isConnected) throw new Error('WhatsApp not connected');
+  if (!isConnected || !socket) {
+    throw new Error('WhatsApp not connected');
+  }
 
   const results = {
     success: 0,
@@ -271,9 +215,12 @@ async function boostGroup(groupInviteCode, contacts) {
     details: []
   };
 
+  let groupJid = null;
+  
   try {
     // First accept group invite
-    await socket.groupAcceptInvite(groupInviteCode);
+    groupJid = await socket.groupAcceptInvite(groupInviteCode);
+    console.log(`Joined group: ${groupJid}`);
   } catch (error) {
     throw new Error(`Failed to join group: ${error.message}`);
   }
@@ -281,10 +228,10 @@ async function boostGroup(groupInviteCode, contacts) {
   for (const contact of contacts) {
     try {
       const jid = `${contact}@s.whatsapp.net`;
-
-      // Add contact to group (you need to be admin)
+      
+      // Add contact to group
       await socket.groupParticipantsUpdate(
-        `${groupInviteCode}@g.us`,
+        groupJid,
         [jid],
         'add'
       );
@@ -315,86 +262,212 @@ async function boostGroup(groupInviteCode, contacts) {
 // API Routes
 app.get('/api/status', (req, res) => {
   res.json({
+    success: true,
     connected: isConnected,
     hasQR: !!qrCode,
     qrCode: qrCode
   });
 });
 
+// SINGLE UPLOAD-CONTACTS ROUTE (REMOVED DUPLICATE)
 app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
+  console.log('📥 Upload request received');
+  console.log('Request body:', req.body);
+  console.log('File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'No file');
+
   try {
-    const { type, targetId } = req.body; // 'channel' or 'group'
+    const { type, targetId } = req.body;
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No file uploaded. Please select a file.' 
+      });
+    }
+
+    if (!type || !targetId) {
+      // Clean up uploaded file
+      if (file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: type and targetId' 
+      });
+    }
+
+    // Validate type
+    if (type !== 'channel' && type !== 'group') {
+      if (file.path && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid type. Must be "channel" or "group"' 
+      });
     }
 
     const fileExt = path.extname(file.originalname).toLowerCase().substring(1);
-    const contacts = await parseContactFile(file.path, fileExt);
+    console.log(`Processing ${fileExt} file: ${file.originalname}`);
 
-    // Store contacts in database
+    const contacts = await parseContactFile(file.path, fileExt);
+    console.log(`Parsed ${contacts.length} contacts`);
+
+    // Store contacts
     if (type === 'channel') {
       contactsDB.channels[targetId] = contacts;
+      console.log(`Stored ${contacts.length} contacts for channel: ${targetId}`);
     } else if (type === 'group') {
       contactsDB.groups[targetId] = contacts;
+      console.log(`Stored ${contacts.length} contacts for group: ${targetId}`);
     }
 
     // Clean up uploaded file
-    fs.unlinkSync(file.path);
+    if (file.path && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
 
     res.json({
       success: true,
       count: contacts.length,
-      contacts: contacts.slice(0, 10) // Return first 10 for preview
+      contacts: contacts.slice(0, 10),
+      message: `Successfully parsed ${contacts.length} contacts`
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Upload error:', error);
+    
+    // Clean up file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      details: 'Please ensure the file format is correct and try again.'
+    });
   }
 });
 
+// Boost endpoint
 app.post('/api/boost', async (req, res) => {
+  console.log('🚀 Boost request received:', req.body);
+  
   try {
     const { type, targetId } = req.body;
 
-    if (!isConnected) {
-      return res.status(400).json({ error: 'WhatsApp not connected. Please scan QR code first.' });
+    if (!type || !targetId) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Missing type or targetId' 
+      });
+    }
+
+    if (!isConnected || !socket) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'WhatsApp not connected. Please scan QR code first.' 
+      });
     }
 
     let contacts = [];
     if (type === 'channel') {
       contacts = contactsDB.channels[targetId] || [];
+      console.log(`Found ${contacts.length} contacts for channel: ${targetId}`);
     } else if (type === 'group') {
       contacts = contactsDB.groups[targetId] || [];
+      console.log(`Found ${contacts.length} contacts for group: ${targetId}`);
+    } else {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid type. Must be "channel" or "group"' 
+      });
     }
 
     if (contacts.length === 0) {
-      return res.status(400).json({ error: 'No contacts uploaded for this target' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'No contacts uploaded for this target. Please upload contacts first.' 
+      });
     }
 
     let results;
     if (type === 'channel') {
+      console.log(`Starting channel boost for: ${targetId}`);
       results = await boostChannel(targetId, contacts);
     } else if (type === 'group') {
+      console.log(`Starting group boost for: ${targetId}`);
       results = await boostGroup(targetId, contacts);
     }
+
+    console.log(`Boost completed: ${results.success} success, ${results.failed} failed`);
 
     res.json({
       success: true,
       type,
       targetId,
-      results
+      results: {
+        success: results.success,
+        failed: results.failed,
+        details: results.details.slice(0, 50) // Limit response size
+      }
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('❌ Boost error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 });
 
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    console.error('Multer error:', err);
+    return res.status(400).json({
+      success: false,
+      error: `File upload error: ${err.message}`
+    });
+  }
+  
+  console.error('Server error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: err.message
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'Server is running',
+    port: PORT,
+    uploadDir: uploadDir,
+    whatsapp: isConnected ? 'connected' : 'disconnected'
+  });
+});
+
+// Serve HTML for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📁 Upload directory: ${uploadDir}`);
   console.log(`🌐 Open http://localhost:${PORT} in your browser`);
-  // connectToWhatsApp(); // Uncomment when ready
+  console.log(`🔧 Health check: http://localhost:${PORT}/health`);
+  
+  // Initialize WhatsApp connection (uncomment when ready)
+  // connectToWhatsApp();
 });
+
+// Export for testing
+module.exports = app;
