@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FEE-XMD WhatsApp Booster</title>
     <style>
-        /* Your existing CSS remains the same */
         * {
             margin: 0;
             padding: 0;
@@ -198,6 +197,11 @@
             cursor: not-allowed;
         }
 
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+
         .results {
             margin-top: 30px;
             padding: 20px;
@@ -219,6 +223,7 @@
         .result-item {
             padding: 10px;
             border-bottom: 1px solid #e0e0e0;
+            font-size: 0.9rem;
         }
 
         .result-item.success {
@@ -258,6 +263,21 @@
             color: #ff4757;
         }
 
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
         /* Debug console */
         .debug-console {
             margin-top: 20px;
@@ -288,6 +308,80 @@
             cursor: pointer;
             z-index: 1000;
         }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .contact-preview {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            background: #f8f9fa;
+        }
+
+        .contact-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.8rem;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .server-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+
+        .server-dot.connected {
+            background: #2ed573;
+        }
     </style>
 </head>
 <body>
@@ -297,10 +391,18 @@
             <p>Automatically boost your WhatsApp channels and groups</p>
         </div>
 
+        <div class="alert info" id="connectionAlert">
+            <strong>💡 Tip:</strong> Make sure server is running on http://localhost:3000
+        </div>
+
         <div class="status-card">
             <div class="status-indicator">
                 <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Connecting to WhatsApp...</span>
+                <span id="statusText">Checking connection...</span>
+            </div>
+            <div class="server-status">
+                <div class="server-dot" id="serverDot"></div>
+                <span id="serverText">Server: Connecting...</span>
             </div>
             <div class="qr-container" id="qrContainer"></div>
         </div>
@@ -315,6 +417,7 @@
                 <div class="form-group">
                     <label for="channelId">Channel Newsletter ID:</label>
                     <input type="text" id="channelId" placeholder="e.g., 120363423084862852@newsletter">
+                    <small style="color: #666; font-size: 0.8rem;">Enter the full channel ID including @newsletter</small>
                 </div>
 
                 <div class="form-group">
@@ -326,10 +429,14 @@
                         <input type="file" id="channelFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('channel')">
                     </div>
                     <div id="channelFileInfo" class="file-info"></div>
+                    <div id="channelPreview" class="contact-preview"></div>
                 </div>
 
                 <button class="btn" id="channelBoostBtn" onclick="boost('channel')" disabled>
                     🚀 Start Channel Boost
+                </button>
+                <button class="btn btn-secondary" onclick="testUpload('channel')">
+                    🧪 Test Upload
                 </button>
             </div>
 
@@ -337,6 +444,7 @@
                 <div class="form-group">
                     <label for="groupId">Group Invite Code:</label>
                     <input type="text" id="groupId" placeholder="e.g., FA1GPSjfUQLCyFbquWnRIS">
+                    <small style="color: #666; font-size: 0.8rem;">Enter the group invite code (without @g.us)</small>
                 </div>
 
                 <div class="form-group">
@@ -348,19 +456,32 @@
                         <input type="file" id="groupFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('group')">
                     </div>
                     <div id="groupFileInfo" class="file-info"></div>
+                    <div id="groupPreview" class="contact-preview"></div>
                 </div>
 
                 <button class="btn" id="groupBoostBtn" onclick="boost('group')" disabled>
                     🚀 Start Group Boost
                 </button>
+                <button class="btn btn-secondary" onclick="testUpload('group')">
+                    🧪 Test Upload
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
             </div>
 
             <!-- Debug Console -->
             <div class="debug-console" id="debugConsole">
-                <div>Debug Console:</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong>Debug Console:</strong>
+                    <button onclick="clearDebug()" style="background: #666; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer;">Clear</button>
+                </div>
                 <div id="debugLog"></div>
             </div>
 
+            <!-- Results Section -->
             <div class="results" id="results">
                 <h3>Boost Results:</h3>
                 <div id="resultDetails"></div>
@@ -374,6 +495,9 @@
                         <div>Failed</div>
                     </div>
                 </div>
+                <button class="btn btn-secondary" onclick="exportResults()" style="margin-top: 15px;">
+                    📥 Export Results
+                </button>
             </div>
         </div>
     </div>
@@ -383,11 +507,15 @@
     <script>
         // Debug functions
         function debugLog(message) {
-            const console = document.getElementById('debugLog');
+            const consoleDiv = document.getElementById('debugLog');
             const timestamp = new Date().toLocaleTimeString();
-            console.innerHTML += `[${timestamp}] ${message}<br>`;
-            console.scrollTop = console.scrollHeight;
+            consoleDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
             console.log(message);
+        }
+
+        function clearDebug() {
+            document.getElementById('debugLog').innerHTML = '';
         }
 
         function toggleDebug() {
@@ -395,32 +523,63 @@
             debugConsole.classList.toggle('active');
         }
 
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.getElementById('connectionAlert');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert ${type}`;
+            alertDiv.style.display = 'block';
+            
+            if (type === 'info') {
+                setTimeout(() => {
+                    alertDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Global variables
         let currentTab = 'channel';
-        let uploadedFiles = {
-            channel: null,
-            group: null
+        let uploadedContacts = {
+            channel: [],
+            group: []
         };
+        let lastResults = null;
 
         // Check server connection
-        async function testServerConnection() {
+        async function checkServerStatus() {
             try {
-                debugLog('Testing server connection...');
-                const response = await fetch('/api/status');
-                debugLog(`Server status: ${response.status}`);
-                return response.ok;
+                debugLog('Checking server connection...');
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                const serverDot = document.getElementById('serverDot');
+                const serverText = document.getElementById('serverText');
+                
+                if (data.success) {
+                    serverDot.className = 'server-dot connected';
+                    serverText.textContent = `Server: ✅ Running on port ${data.port}`;
+                    debugLog('Server is running');
+                    return true;
+                } else {
+                    throw new Error('Server not responding');
+                }
             } catch (error) {
                 debugLog(`Server connection failed: ${error.message}`);
+                const serverDot = document.getElementById('serverDot');
+                const serverText = document.getElementById('serverText');
+                serverDot.className = 'server-dot';
+                serverText.textContent = 'Server: ❌ Not connected';
+                showAlert('⚠️ Cannot connect to server. Make sure server is running on http://localhost:3000', 'error');
                 return false;
             }
         }
 
         // Check WhatsApp connection status
-        async function checkStatus() {
+        async function checkWhatsAppStatus() {
             try {
                 debugLog('Checking WhatsApp status...');
                 const response = await fetch('/api/status');
                 const data = await response.json();
-                debugLog(`Status response: ${JSON.stringify(data)}`);
+                debugLog(`WhatsApp status: ${JSON.stringify(data)}`);
 
                 const statusDot = document.getElementById('statusDot');
                 const statusText = document.getElementById('statusText');
@@ -431,14 +590,14 @@
                     statusText.textContent = '✅ Connected to WhatsApp';
                     qrContainer.innerHTML = '';
 
-                    // Enable boost buttons if files are uploaded
-                    if (uploadedFiles.channel) {
+                    // Enable boost buttons if contacts are uploaded
+                    if (uploadedContacts.channel.length > 0) {
                         document.getElementById('channelBoostBtn').disabled = false;
                     }
-                    if (uploadedFiles.group) {
+                    if (uploadedContacts.group.length > 0) {
                         document.getElementById('groupBoostBtn').disabled = false;
                     }
-                } else if (data.hasQR) {
+                } else if (data.hasQR && data.qrCode) {
                     statusDot.className = 'status-dot';
                     statusText.textContent = '📱 Scan QR Code to connect';
                     qrContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code">`;
@@ -448,8 +607,11 @@
                     qrContainer.innerHTML = '';
                 }
             } catch (error) {
-                debugLog(`Error checking status: ${error.message}`);
-                console.error('Error checking status:', error);
+                debugLog(`Error checking WhatsApp status: ${error.message}`);
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'WhatsApp: ❌ Connection error';
             }
         }
 
@@ -480,13 +642,13 @@
         function handleFileUpload(type) {
             const fileInput = document.getElementById(`${type}File`);
             const fileInfo = document.getElementById(`${type}FileInfo`);
-            const boostBtn = document.getElementById(`${type}BoostBtn`);
+            const previewDiv = document.getElementById(`${type}Preview`);
 
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
-                uploadedFiles[type] = file;
-                debugLog(`File selected: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`);
+                debugLog(`File selected for ${type}: ${file.name}, Size: ${file.size} bytes`);
                 fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                previewDiv.innerHTML = '<div class="contact-item">Parsing file...</div>';
 
                 // Upload to server
                 uploadContactsFile(file, type);
@@ -495,14 +657,13 @@
 
         // Upload contacts to server
         async function uploadContactsFile(file, type) {
-            // Get target ID
             const targetId = type === 'channel' ? 
                 document.getElementById('channelId').value.trim() :
                 document.getElementById('groupId').value.trim();
 
             if (!targetId) {
                 debugLog(`No target ID provided for ${type}`);
-                alert(`❌ Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'} first`);
+                showAlert(`❌ Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'} first`, 'error');
                 return;
             }
 
@@ -529,7 +690,8 @@
                 debugLog(`Response status: ${response.status}`);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
 
                 const data = await response.json();
@@ -539,24 +701,64 @@
                     fileInfo.textContent = `✅ ${data.count} contacts uploaded successfully!`;
                     fileInfo.style.color = '#2ed573';
                     
-                    alert(`✅ ${data.count} contacts uploaded successfully!`);
-
-                    // Enable boost button if connected
-                    checkStatus();
+                    // Store contacts
+                    uploadedContacts[type] = data.contacts || [];
+                    
+                    // Show preview
+                    const previewDiv = document.getElementById(`${type}Preview`);
+                    previewDiv.innerHTML = '';
+                    if (data.contacts && data.contacts.length > 0) {
+                        data.contacts.forEach(contact => {
+                            const div = document.createElement('div');
+                            div.className = 'contact-item';
+                            div.textContent = contact;
+                            previewDiv.appendChild(div);
+                        });
+                        if (data.count > 10) {
+                            const moreDiv = document.createElement('div');
+                            moreDiv.className = 'contact-item';
+                            moreDiv.textContent = `... and ${data.count - 10} more`;
+                            moreDiv.style.fontStyle = 'italic';
+                            previewDiv.appendChild(moreDiv);
+                        }
+                    }
+                    
+                    showAlert(`✅ ${data.count} contacts uploaded successfully!`, 'success');
+                    
+                    // Enable boost button if WhatsApp is connected
+                    checkWhatsAppStatus();
                 } else {
                     fileInfo.textContent = `❌ Upload failed: ${data.error || 'Unknown error'}`;
                     fileInfo.style.color = '#ff4757';
-                    alert(`❌ Failed to upload contacts: ${data.error}`);
+                    showAlert(`❌ Upload failed: ${data.error}`, 'error');
                 }
             } catch (error) {
                 debugLog(`Upload error: ${error.message}`);
-                console.error('Upload error:', error);
                 
                 fileInfo.textContent = `❌ Error: ${error.message}`;
                 fileInfo.style.color = '#ff4757';
                 
-                alert(`❌ Upload failed: ${error.message}`);
+                showAlert(`❌ Upload failed: ${error.message}`, 'error');
             }
+        }
+
+        // Test upload function
+        async function testUpload(type) {
+            debugLog(`Testing ${type} upload...`);
+            
+            // Create a test file
+            const testContent = "254712345678\n254712345679\n254712345680";
+            const blob = new Blob([testContent], { type: 'text/plain' });
+            const testFile = new File([blob], "test-contacts.txt", { type: 'text/plain' });
+            
+            // Simulate file selection
+            const fileInput = document.getElementById(`${type}File`);
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(testFile);
+            fileInput.files = dataTransfer.files;
+            
+            // Trigger upload
+            handleFileUpload(type);
         }
 
         // Start boost process
@@ -566,12 +768,12 @@
                 document.getElementById('groupId').value.trim();
 
             if (!targetId) {
-                alert(`❌ Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'}`);
+                showAlert(`❌ Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'}`, 'error');
                 return;
             }
 
-            if (!uploadedFiles[type]) {
-                alert('❌ Please upload contacts file first');
+            if (uploadedContacts[type].length === 0) {
+                showAlert('❌ Please upload contacts file first', 'error');
                 return;
             }
 
@@ -579,7 +781,13 @@
 
             const boostBtn = document.getElementById(`${type}BoostBtn`);
             boostBtn.disabled = true;
-            boostBtn.textContent = '⏳ Processing...';
+            boostBtn.innerHTML = '<span class="loading"></span> Processing...';
+
+            // Show progress bar
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
 
             try {
                 debugLog('Sending boost request...');
@@ -599,18 +807,26 @@
                 debugLog(`Boost response data: ${JSON.stringify(data)}`);
 
                 if (data.success) {
+                    progressFill.style.width = '100%';
                     debugLog('Boost successful!');
+                    lastResults = data.results;
                     showResults(data.results);
+                    showAlert(`✅ Boost completed! ${data.results.success} successful, ${data.results.failed} failed`, 'success');
                 } else {
-                    debugLog(`Boost failed: ${data.error}`);
-                    alert('❌ Boost failed: ' + (data.error || 'Unknown error'));
+                    showAlert(`❌ Boost failed: ${data.error || 'Unknown error'}`, 'error');
                 }
             } catch (error) {
                 debugLog(`Boost error: ${error.message}`);
-                alert('❌ Error: ' + error.message);
+                showAlert(`❌ Error: ${error.message}`, 'error');
             } finally {
                 boostBtn.disabled = false;
                 boostBtn.textContent = '🚀 Start ' + (type === 'channel' ? 'Channel' : 'Group') + ' Boost';
+                
+                // Hide progress bar after delay
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 2000);
             }
         }
 
@@ -628,41 +844,80 @@
 
             // Show details
             detailsDiv.innerHTML = '';
-            results.details.slice(0, 20).forEach(detail => { // Limit to first 20 for performance
-                const div = document.createElement('div');
-                div.className = `result-item ${detail.status}`;
-                div.textContent = `${detail.contact}: ${detail.message}`;
-                detailsDiv.appendChild(div);
-            });
+            if (results.details && results.details.length > 0) {
+                results.details.slice(0, 20).forEach(detail => {
+                    const div = document.createElement('div');
+                    div.className = `result-item ${detail.status}`;
+                    div.textContent = `${detail.contact}: ${detail.message}`;
+                    detailsDiv.appendChild(div);
+                });
 
-            if (results.details.length > 20) {
-                const moreDiv = document.createElement('div');
-                moreDiv.textContent = `... and ${results.details.length - 20} more`;
-                moreDiv.style.color = '#666';
-                moreDiv.style.fontStyle = 'italic';
-                detailsDiv.appendChild(moreDiv);
+                if (results.details.length > 20) {
+                    const moreDiv = document.createElement('div');
+                    moreDiv.className = 'result-item';
+                    moreDiv.textContent = `... and ${results.details.length - 20} more`;
+                    moreDiv.style.color = '#666';
+                    moreDiv.style.fontStyle = 'italic';
+                    detailsDiv.appendChild(moreDiv);
+                }
+            } else {
+                const noDetails = document.createElement('div');
+                noDetails.className = 'result-item';
+                noDetails.textContent = 'No detailed results available';
+                detailsDiv.appendChild(noDetails);
             }
 
             // Show results section
             resultsDiv.classList.add('active');
         }
 
+        // Export results
+        function exportResults() {
+            if (!lastResults) {
+                showAlert('No results to export', 'error');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Contact,Status,Message\n";
+            
+            lastResults.details.forEach(detail => {
+                csvContent += `${detail.contact},${detail.status},${detail.message}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "boost_results.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showAlert('Results exported to CSV file', 'success');
+        }
+
         // Initialize
         async function init() {
             debugLog('Initializing application...');
+            showAlert('🔌 Connecting to server...', 'info');
+
+            // Check server status first
+            const serverConnected = await checkServerStatus();
             
-            // Test server connection first
-            const serverConnected = await testServerConnection();
-            if (!serverConnected) {
-                alert('⚠️ Cannot connect to server. Please make sure the server is running on port 3000.');
+            if (serverConnected) {
+                showAlert('✅ Server connected successfully', 'success');
+                
+                // Check WhatsApp status
+                checkWhatsAppStatus();
+                
+                // Check status periodically
+                setInterval(checkWhatsAppStatus, 5000);
+                setInterval(checkServerStatus, 10000);
             }
-            
-            checkStatus();
-            setInterval(checkStatus, 5000); // Check status every 5 seconds
         }
 
-        // Start everything
-        init();
+        // Start everything when page loads
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
