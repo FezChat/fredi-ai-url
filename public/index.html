@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEE-XMD WhatsApp Booster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        
+        .status-dot.connected {
+            background: #2ed573;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .qr-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .qr-container img {
+            max-width: 200px;
+            border: 10px solid white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .tab.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .dashboard {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload:hover {
+            background: #f8f9ff;
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .results.active {
+            display: block;
+            animation: slideDown 0.5s ease;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .result-item.success {
+            color: #2ed573;
+        }
+        
+        .result-item.failed {
+            color: #ff4757;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-success .stat-number {
+            color: #2ed573;
+        }
+        
+        .stat-failed .stat-number {
+            color: #ff4757;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>FEE-XMD WhatsApp Booster</h1>
+            <p>Automatically boost your WhatsApp channels and groups</p>
+        </div>
+        
+        <div class="status-card">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting to WhatsApp...</span>
+            </div>
+            <div class="qr-container" id="qrContainer"></div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('channel')">📢 Boost Channel</button>
+            <button class="tab" onclick="switchTab('group')">👥 Boost Group</button>
+        </div>
+        
+        <div class="dashboard">
+            <div id="channelTab">
+                <div class="form-group">
+                    <label for="channelId">Channel Newsletter ID:</label>
+                    <input type="text" id="channelId" placeholder="e.g., 120363423084862852@newsletter">
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload Contacts File:</label>
+                    <div class="file-upload" onclick="document.getElementById('channelFile').click()">
+                        <div class="upload-icon">📁</div>
+                        <p>Click to upload contacts file</p>
+                        <p class="file-info">Supported formats: VCF, JSON, CSV, TXT</p>
+                        <input type="file" id="channelFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('channel')">
+                    </div>
+                    <div id="channelFileInfo" class="file-info"></div>
+                </div>
+                
+                <button class="btn" id="channelBoostBtn" onclick="boost('channel')" disabled>
+                    🚀 Start Channel Boost
+                </button>
+            </div>
+            
+            <div id="groupTab" style="display: none;">
+                <div class="form-group">
+                    <label for="groupId">Group Invite Code:</label>
+                    <input type="text" id="groupId" placeholder="e.g., FA1GPSjfUQLCyFbquWnRIS">
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload Contacts File:</label>
+                    <div class="file-upload" onclick="document.getElementById('groupFile').click()">
+                        <div class="upload-icon">📁</div>
+                        <p>Click to upload contacts file</p>
+                        <p class="file-info">Supported formats: VCF, JSON, CSV, TXT</p>
+                        <input type="file" id="groupFile" accept=".vcf,.json,.csv,.txt" onchange="handleFileUpload('group')">
+                    </div>
+                    <div id="groupFileInfo" class="file-info"></div>
+                </div>
+                
+                <button class="btn" id="groupBoostBtn" onclick="boost('group')" disabled>
+                    🚀 Start Group Boost
+                </button>
+            </div>
+            
+            <div class="results" id="results">
+                <h3>Boost Results:</h3>
+                <div id="resultDetails"></div>
+                <div class="stats">
+                    <div class="stat-card stat-success">
+                        <div class="stat-number" id="successCount">0</div>
+                        <div>Successful</div>
+                    </div>
+                    <div class="stat-card stat-failed">
+                        <div class="stat-number" id="failedCount">0</div>
+                        <div>Failed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentTab = 'channel';
+        let uploadedFiles = {
+            channel: null,
+            group: null
+        };
+        
+        // Check WhatsApp connection status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                const qrContainer = document.getElementById('qrContainer');
+                
+                if (data.connected) {
+                    statusDot.className = 'status-dot connected';
+                    statusText.textContent = '✅ Connected to WhatsApp';
+                    qrContainer.innerHTML = '';
+                    
+                    // Enable boost buttons if files are uploaded
+                    if (uploadedFiles.channel) {
+                        document.getElementById('channelBoostBtn').disabled = false;
+                    }
+                    if (uploadedFiles.group) {
+                        document.getElementById('groupBoostBtn').disabled = false;
+                    }
+                } else if (data.hasQR) {
+                    statusDot.className = 'status-dot';
+                    statusText.textContent = '📱 Scan QR Code to connect';
+                    qrContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code">`;
+                } else {
+                    statusDot.className = 'status-dot';
+                    statusText.textContent = 'Connecting to WhatsApp...';
+                    qrContainer.innerHTML = '';
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+        
+        // Switch between channel and group tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+                if (t.textContent.includes(tab === 'channel' ? 'Channel' : 'Group')) {
+                    t.classList.add('active');
+                }
+            });
+            
+            // Show/hide tabs
+            document.getElementById('channelTab').style.display = 
+                tab === 'channel' ? 'block' : 'none';
+            document.getElementById('groupTab').style.display = 
+                tab === 'group' ? 'block' : 'none';
+            
+            // Hide previous results
+            document.getElementById('results').classList.remove('active');
+        }
+        
+        // Handle file upload
+        function handleFileUpload(type) {
+            const fileInput = document.getElementById(`${type}File`);
+            const fileInfo = document.getElementById(`${type}FileInfo`);
+            const boostBtn = document.getElementById(`${type}BoostBtn`);
+            
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                uploadedFiles[type] = file;
+                fileInfo.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                
+                // Upload to server
+                uploadContactsFile(file, type);
+            }
+        }
+        
+        // Upload contacts to server
+        async function uploadContactsFile(file, type) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+            
+            // Get target ID
+            const targetId = type === 'channel' ? 
+                document.getElementById('channelId').value :
+                document.getElementById('groupId').value;
+            
+            if (!targetId) {
+                alert(`Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'} first`);
+                return;
+            }
+            
+            formData.append('targetId', targetId);
+            
+            try {
+                const response = await fetch('/api/upload-contacts', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(`✅ ${data.count} contacts uploaded successfully!`);
+                    
+                    // Enable boost button if connected
+                    checkStatus();
+                } else {
+                    alert('❌ Failed to upload contacts');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Error uploading file');
+            }
+        }
+        
+        // Start boost process
+        async function boost(type) {
+            const targetId = type === 'channel' ? 
+                document.getElementById('channelId').value :
+                document.getElementById('groupId').value;
+            
+            if (!targetId) {
+                alert(`Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'}`);
+                return;
+            }
+            
+            if (!uploadedFiles[type]) {
+                alert('Please upload contacts file first');
+                return;
+            }
+            
+            const boostBtn = document.getElementById(`${type}BoostBtn`);
+            boostBtn.disabled = true;
+            boostBtn.textContent = '⏳ Processing...';
+            
+            try {
+                const response = await fetch('/api/boost', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: type,
+                        targetId: targetId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResults(data.results);
+                } else {
+                    alert('Boost failed: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                boostBtn.disabled = false;
+                boostBtn.textContent = '🚀 Start ' + (type === 'channel' ? 'Channel' : 'Group') + ' Boost';
+            }
+        }
+        
+        // Display results
+        function showResults(results) {
+            const resultsDiv = document.getElementById('results');
+            const detailsDiv = document.getElementById('resultDetails');
+            const successCount = document.getElementById('successCount');
+            const failedCount = document.getElementById('failedCount');
+            
+            // Update stats
+            successCount.textContent = results.success;
+            failedCount.textContent = results.failed;
+            
+            // Show details
+            detailsDiv.innerHTML = '';
+            results.details.forEach(detail => {
+                const div = document.createElement('div');
+                div.className = `result-item ${detail.status}`;
+                div.textContent = `${detail.contact}: ${detail.message}`;
+                detailsDiv.appendChild(div);
+            });
+            
+            // Show results section
+            resultsDiv.classList.add('active');
+        }
+        
+        // Initialize
+        checkStatus();
+        setInterval(checkStatus, 5000); // Check status every 5 seconds
+    </script>
+</body>
+</html>
