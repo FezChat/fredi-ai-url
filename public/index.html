@@ -203,6 +203,11 @@
             margin-top: 10px;
         }
 
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
         .results {
             margin-top: 30px;
             padding: 20px;
@@ -350,6 +355,12 @@
             border: 1px solid #bee5eb;
         }
 
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
         .contact-preview {
             max-height: 150px;
             overflow-y: auto;
@@ -382,6 +393,111 @@
 
         .server-dot.connected {
             background: #2ed573;
+        }
+
+        .validation-error {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .validation-error.show {
+            display: block;
+        }
+
+        .input-error {
+            border-color: #dc3545 !important;
+        }
+
+        .requirement-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .requirement-list h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .requirement-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .requirement-item .icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .requirement-item.valid .icon {
+            color: #2ed573;
+        }
+
+        .requirement-item.invalid .icon {
+            color: #ff4757;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
         }
     </style>
 </head>
@@ -419,6 +535,7 @@
                     <label for="channelId">Channel Newsletter ID:</label>
                     <input type="text" id="channelId" placeholder="e.g., 120363423084862852@newsletter">
                     <small style="color: #666; font-size: 0.8rem;">Enter the full channel ID including @newsletter</small>
+                    <div class="validation-error" id="channelIdError">Please enter a valid Channel ID</div>
                 </div>
 
                 <div class="form-group">
@@ -431,9 +548,10 @@
                     </div>
                     <div id="channelFileInfo" class="file-info"></div>
                     <div id="channelPreview" class="contact-preview"></div>
+                    <div class="validation-error" id="channelFileError">Please upload a contacts file</div>
                 </div>
 
-                <button class="btn" id="channelBoostBtn" onclick="boost('channel')" disabled>
+                <button class="btn" id="channelBoostBtn" onclick="validateAndBoost('channel')">
                     🚀 Start Channel Boost
                 </button>
                 <button class="btn btn-secondary" onclick="testUpload('channel')">
@@ -446,6 +564,7 @@
                     <label for="groupId">Group Invite Code:</label>
                     <input type="text" id="groupId" placeholder="e.g., FA1GPSjfUQLCyFbquWnRIS">
                     <small style="color: #666; font-size: 0.8rem;">Enter the group invite code (without @g.us)</small>
+                    <div class="validation-error" id="groupIdError">Please enter a valid Group Invite Code</div>
                 </div>
 
                 <div class="form-group">
@@ -458,14 +577,32 @@
                     </div>
                     <div id="groupFileInfo" class="file-info"></div>
                     <div id="groupPreview" class="contact-preview"></div>
+                    <div class="validation-error" id="groupFileError">Please upload a contacts file</div>
                 </div>
 
-                <button class="btn" id="groupBoostBtn" onclick="boost('group')" disabled>
+                <button class="btn" id="groupBoostBtn" onclick="validateAndBoost('group')">
                     🚀 Start Group Boost
                 </button>
                 <button class="btn btn-secondary" onclick="testUpload('group')">
                     🧪 Test Upload
                 </button>
+            </div>
+
+            <!-- Requirements List -->
+            <div class="requirement-list" id="requirementsList">
+                <h4>Requirements for boosting:</h4>
+                <div class="requirement-item" id="reqWhatsApp">
+                    <span class="icon">🔴</span>
+                    <span>WhatsApp must be connected</span>
+                </div>
+                <div class="requirement-item" id="reqTargetId">
+                    <span class="icon">🔴</span>
+                    <span>Channel ID / Group Code must be entered</span>
+                </div>
+                <div class="requirement-item" id="reqContacts">
+                    <span class="icon">🔴</span>
+                    <span>Contacts file must be uploaded</span>
+                </div>
             </div>
 
             <!-- Progress Bar -->
@@ -503,6 +640,26 @@
         </div>
     </div>
 
+    <!-- Validation Modal -->
+    <div class="modal" id="validationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">⚠️ Missing Information</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalMessage">
+                    Please fill in all required information before starting the boost.
+                </div>
+                <div id="modalErrors" style="margin-top: 15px; color: #dc3545;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                <button class="btn" id="modalActionBtn" onclick="handleModalAction()">Fix Now</button>
+            </div>
+        </div>
+    </div>
+
     <button class="debug-toggle" onclick="toggleDebug()">🔧 Debug</button>
 
     <script>
@@ -534,6 +691,45 @@
                 setTimeout(() => {
                     alertDiv.style.display = 'none';
                 }, 5000);
+            }
+        }
+
+        // Modal functions
+        function showModal(title, message, errors = [], actionText = 'Fix Now') {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            
+            const errorsDiv = document.getElementById('modalErrors');
+            if (errors.length > 0) {
+                errorsDiv.innerHTML = '<strong>Missing:</strong><ul style="margin-top: 5px; padding-left: 20px;">';
+                errors.forEach(error => {
+                    errorsDiv.innerHTML += `<li>${error}</li>`;
+                });
+                errorsDiv.innerHTML += '</ul>';
+                errorsDiv.style.display = 'block';
+            } else {
+                errorsDiv.style.display = 'none';
+            }
+            
+            document.getElementById('modalActionBtn').textContent = actionText;
+            document.getElementById('validationModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('validationModal').classList.remove('active');
+        }
+
+        function handleModalAction() {
+            closeModal();
+            // Focus on first missing field
+            const missingField = document.querySelector('.validation-error.show');
+            if (missingField) {
+                const inputId = missingField.id.replace('Error', '');
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.focus();
+                    input.classList.add('input-error');
+                }
             }
         }
 
@@ -585,21 +781,31 @@
                 const statusDot = document.getElementById('statusDot');
                 const statusText = document.getElementById('statusText');
                 const qrContainer = document.getElementById('qrContainer');
+                const reqWhatsApp = document.getElementById('reqWhatsApp');
 
                 if (data.connected) {
                     statusDot.className = 'status-dot connected';
                     statusText.textContent = '✅ Connected to WhatsApp';
                     qrContainer.innerHTML = '';
+                    reqWhatsApp.className = 'requirement-item valid';
+                    reqWhatsApp.querySelector('.icon').textContent = '✅';
+                    reqWhatsApp.querySelector('.icon').style.color = '#2ed573';
                     
                 } else if (data.hasQR && data.qrCode) {
                     statusDot.className = 'status-dot';
                     statusText.textContent = '📱 Scan QR Code to connect';
                     qrContainer.innerHTML = `<img src="${data.qrCode}" alt="QR Code">`;
+                    reqWhatsApp.className = 'requirement-item invalid';
+                    reqWhatsApp.querySelector('.icon').textContent = '❌';
+                    reqWhatsApp.querySelector('.icon').style.color = '#ff4757';
                     
                 } else {
                     statusDot.className = 'status-dot';
                     statusText.textContent = 'Connecting to WhatsApp...';
                     qrContainer.innerHTML = '';
+                    reqWhatsApp.className = 'requirement-item invalid';
+                    reqWhatsApp.querySelector('.icon').textContent = '❌';
+                    reqWhatsApp.querySelector('.icon').style.color = '#ff4757';
                 }
             } catch (error) {
                 debugLog(`Error checking WhatsApp status: ${error.message}`);
@@ -607,40 +813,132 @@
                 const statusText = document.getElementById('statusText');
                 statusDot.className = 'status-dot';
                 statusText.textContent = 'WhatsApp: ❌ Connection error';
+                
+                const reqWhatsApp = document.getElementById('reqWhatsApp');
+                reqWhatsApp.className = 'requirement-item invalid';
+                reqWhatsApp.querySelector('.icon').textContent = '❌';
+                reqWhatsApp.querySelector('.icon').style.color = '#ff4757';
             }
         }
 
-        // 🔴🔴🔴 FUNCTION MPYA: Update boost buttons 🔴🔴🔴
-        function updateBoostButtons() {
-            debugLog('Updating boost buttons...');
+        // Update requirements status
+        function updateRequirements() {
+            debugLog('Updating requirements status...');
             
-            // Check WhatsApp connection first
-            fetch('/api/status')
-                .then(res => res.json())
-                .then(data => {
-                    const isConnected = data.connected;
-                    
-                    // Update both buttons
-                    ['channel', 'group'].forEach(type => {
-                        const boostBtn = document.getElementById(`${type}BoostBtn`);
-                        const hasContacts = uploadedContacts[type] && uploadedContacts[type].length > 0;
-                        
-                        // Enable button only if BOTH conditions are met
-                        boostBtn.disabled = !(hasContacts && isConnected);
-                        
-                        if (boostBtn.disabled) {
-                            debugLog(`Button ${type} disabled: contacts=${hasContacts}, connected=${isConnected}`);
-                        } else {
-                            debugLog(`✅ Button ${type} ENABLED! (${uploadedContacts[type].length} contacts, WhatsApp connected)`);
-                        }
-                    });
-                })
-                .catch(error => {
-                    debugLog(`Error updating buttons: ${error.message}`);
-                    // Disable both buttons on error
-                    document.getElementById('channelBoostBtn').disabled = true;
-                    document.getElementById('groupBoostBtn').disabled = true;
-                });
+            // Check target ID for current tab
+            const targetId = currentTab === 'channel' ? 
+                document.getElementById('channelId').value.trim() :
+                document.getElementById('groupId').value.trim();
+            
+            const reqTargetId = document.getElementById('reqTargetId');
+            if (targetId) {
+                reqTargetId.className = 'requirement-item valid';
+                reqTargetId.querySelector('.icon').textContent = '✅';
+                reqTargetId.querySelector('.icon').style.color = '#2ed573';
+            } else {
+                reqTargetId.className = 'requirement-item invalid';
+                reqTargetId.querySelector('.icon').textContent = '❌';
+                reqTargetId.querySelector('.icon').style.color = '#ff4757';
+            }
+            
+            // Check contacts for current tab
+            const hasContacts = uploadedContacts[currentTab] && uploadedContacts[currentTab].length > 0;
+            const reqContacts = document.getElementById('reqContacts');
+            if (hasContacts) {
+                reqContacts.className = 'requirement-item valid';
+                reqContacts.querySelector('.icon').textContent = '✅';
+                reqContacts.querySelector('.icon').style.color = '#2ed573';
+            } else {
+                reqContacts.className = 'requirement-item invalid';
+                reqContacts.querySelector('.icon').textContent = '❌';
+                reqContacts.querySelector('.icon').style.color = '#ff4757';
+            }
+        }
+
+        // Validate form before boosting
+        function validateForm(type) {
+            debugLog(`Validating ${type} form...`);
+            
+            const errors = [];
+            const missingFields = [];
+            
+            // Check WhatsApp connection
+            const isConnected = document.getElementById('statusDot').classList.contains('connected');
+            if (!isConnected) {
+                errors.push('WhatsApp is not connected. Please scan QR code first.');
+                missingFields.push('WhatsApp Connection');
+            }
+            
+            // Check target ID
+            const targetId = type === 'channel' ? 
+                document.getElementById('channelId').value.trim() :
+                document.getElementById('groupId').value.trim();
+            
+            if (!targetId) {
+                errors.push(`${type === 'channel' ? 'Channel ID' : 'Group Invite Code'} is required`);
+                missingFields.push(type === 'channel' ? 'Channel ID' : 'Group Code');
+                
+                // Show error on input
+                const errorDiv = document.getElementById(`${type}IdError`);
+                errorDiv.classList.add('show');
+                const input = document.getElementById(`${type}Id`);
+                input.classList.add('input-error');
+            } else {
+                // Clear error if exists
+                const errorDiv = document.getElementById(`${type}IdError`);
+                errorDiv.classList.remove('show');
+                const input = document.getElementById(`${type}Id`);
+                input.classList.remove('input-error');
+            }
+            
+            // Check contacts
+            const hasContacts = uploadedContacts[type] && uploadedContacts[type].length > 0;
+            if (!hasContacts) {
+                errors.push('Contacts file is required. Please upload a contacts file.');
+                missingFields.push('Contacts File');
+                
+                // Show error
+                const errorDiv = document.getElementById(`${type}FileError`);
+                errorDiv.classList.add('show');
+            } else {
+                // Clear error if exists
+                const errorDiv = document.getElementById(`${type}FileError`);
+                errorDiv.classList.remove('show');
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors,
+                missingFields: missingFields
+            };
+        }
+
+        // Validate and boost
+        async function validateAndBoost(type) {
+            debugLog(`Starting validation for ${type} boost...`);
+            
+            // Validate form
+            const validation = validateForm(type);
+            
+            if (!validation.isValid) {
+                debugLog(`Validation failed: ${validation.errors.join(', ')}`);
+                
+                // Show modal with errors
+                showModal(
+                    '⚠️ Missing Information',
+                    'Please fill in all required information before starting the boost.',
+                    validation.missingFields,
+                    'Fill Missing Fields'
+                );
+                
+                // Also show alert
+                showAlert(`❌ Please fill all required fields: ${validation.missingFields.join(', ')}`, 'error');
+                return;
+            }
+            
+            // If validation passed, start boost
+            debugLog('✅ Validation passed, starting boost...');
+            await boost(type);
         }
 
         // Switch between channel and group tabs
@@ -665,8 +963,8 @@
             // Hide previous results
             document.getElementById('results').classList.remove('active');
             
-            // 🔴🔴🔴 UPDATE BUTTONS FOR CURRENT TAB 🔴🔴🔴
-            updateBoostButtons();
+            // Update requirements for current tab
+            updateRequirements();
         }
 
         // Handle file upload
@@ -756,8 +1054,8 @@
                     
                     showAlert(`✅ ${data.count} contacts uploaded successfully!`, 'success');
                     
-                    // 🔴🔴🔴 ENABLE BOOST BUTTON AFTER UPLOAD 🔴🔴🔴
-                    updateBoostButtons();
+                    // Update requirements
+                    updateRequirements();
                 } else {
                     fileInfo.textContent = `❌ Upload failed: ${data.error || 'Unknown error'}`;
                     fileInfo.style.color = '#ff4757';
@@ -798,21 +1096,12 @@
                 document.getElementById('channelId').value.trim() :
                 document.getElementById('groupId').value.trim();
 
-            if (!targetId) {
-                showAlert(`❌ Please enter ${type === 'channel' ? 'Channel ID' : 'Group Invite Code'}`, 'error');
-                return;
-            }
-
-            if (uploadedContacts[type].length === 0) {
-                showAlert('❌ Please upload contacts file first', 'error');
-                return;
-            }
-
             debugLog(`Starting boost for ${type}: ${targetId}`);
 
             const boostBtn = document.getElementById(`${type}BoostBtn`);
-            boostBtn.disabled = true;
+            const originalText = boostBtn.textContent;
             boostBtn.innerHTML = '<span class="loading"></span> Processing...';
+            boostBtn.disabled = true;
 
             // Show progress bar
             const progressBar = document.getElementById('progressBar');
@@ -850,8 +1139,8 @@
                 debugLog(`Boost error: ${error.message}`);
                 showAlert(`❌ Error: ${error.message}`, 'error');
             } finally {
+                boostBtn.textContent = originalText;
                 boostBtn.disabled = false;
-                boostBtn.textContent = '🚀 Start ' + (type === 'channel' ? 'Channel' : 'Group') + ' Boost';
                 
                 // Hide progress bar after delay
                 setTimeout(() => {
@@ -927,6 +1216,25 @@
             showAlert('Results exported to CSV file', 'success');
         }
 
+        // Add input event listeners to clear errors
+        document.addEventListener('DOMContentLoaded', function() {
+            // Channel ID input
+            document.getElementById('channelId').addEventListener('input', function() {
+                const errorDiv = document.getElementById('channelIdError');
+                errorDiv.classList.remove('show');
+                this.classList.remove('input-error');
+                updateRequirements();
+            });
+            
+            // Group ID input
+            document.getElementById('groupId').addEventListener('input', function() {
+                const errorDiv = document.getElementById('groupIdError');
+                errorDiv.classList.remove('show');
+                this.classList.remove('input-error');
+                updateRequirements();
+            });
+        });
+
         // Initialize
         async function init() {
             debugLog('Initializing application...');
@@ -941,15 +1249,13 @@
                 // Check WhatsApp status
                 checkWhatsAppStatus();
                 
-                // 🔴🔴🔴 UPDATE BUTTONS INITIALLY 🔴🔴🔴
-                updateBoostButtons();
+                // Update requirements initially
+                updateRequirements();
                 
                 // Check status periodically
                 setInterval(checkWhatsAppStatus, 5000);
                 setInterval(checkServerStatus, 10000);
-                
-                // 🔴🔴🔴 UPDATE BUTTONS PERIODICALLY TOO 🔴🔴🔴
-                setInterval(updateBoostButtons, 3000);
+                setInterval(updateRequirements, 2000);
             }
         }
 
