@@ -1,0 +1,117 @@
+<!-- public/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEE-XMD WhatsApp Booster Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1>FEE-XMD WhatsApp Booster</h1>
+                <p>Automated WhatsApp Channel & Group Management</p>
+            </div>
+            <div class="header-right">
+                <span id="userEmail"></span>
+                <button id="logoutBtn" class="btn-logout">Logout</button>
+            </div>
+        </header>
+        
+        <nav class="dashboard-nav">
+            <ul>
+                <li><a href="#" id="navChannels">Boost Channel Followers</a></li>
+                <li><a href="#" id="navGroups">Boost Group Members</a></li>
+                <li><a href="#" id="navStatus">Boost Status</a></li>
+            </ul>
+        </nav>
+        
+        <main class="dashboard-main">
+            <div id="channelsSection" class="section active">
+                <h2>Boost Channel Followers</h2>
+                <div class="card">
+                    <h3>Channel Information</h3>
+                    <div class="form-group">
+                        <label for="channelLink">Channel Link</label>
+                        <input type="text" id="channelLink" 
+                               placeholder="https://whatsapp.com/channel/...">
+                        <button id="fetchChannelInfo" class="btn-primary">Fetch Channel Info</button>
+                    </div>
+                    <div id="channelInfo" class="info-display"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>Upload Contacts</h3>
+                    <div class="form-group">
+                        <label for="contactsFile">Select Contacts File</label>
+                        <input type="file" id="contactsFile" 
+                               accept=".vcf,.json,.txt,text/vcard,application/json,text/plain">
+                        <p class="help-text">Supported formats: VCF, JSON, TXT</p>
+                    </div>
+                    <div id="contactsPreview"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>Boost Action</h3>
+                    <div class="action-buttons">
+                        <button id="initializeWhatsApp" class="btn-secondary">Initialize WhatsApp</button>
+                        <button id="boostFollowers" class="btn-primary" disabled>Boost Channel Followers</button>
+                    </div>
+                    <div id="boostProgress" class="progress-container"></div>
+                    <div id="boostResults" class="results-container"></div>
+                </div>
+            </div>
+            
+            <div id="groupsSection" class="section">
+                <h2>Boost Group Members</h2>
+                <div class="card">
+                    <h3>Group Information</h3>
+                    <div class="form-group">
+                        <label for="groupLink">Group Invite Link</label>
+                        <input type="text" id="groupLink" 
+                               placeholder="https://chat.whatsapp.com/...">
+                        <button id="fetchGroupInfo" class="btn-primary">Fetch Group Info</button>
+                    </div>
+                    <div id="groupInfo" class="info-display"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>Upload Contacts</h3>
+                    <div class="form-group">
+                        <label for="groupContactsFile">Select Contacts File</label>
+                        <input type="file" id="groupContactsFile" 
+                               accept=".vcf,.json,.txt,text/vcard,application/json,text/plain">
+                        <p class="help-text">Supported formats: VCF, JSON, TXT</p>
+                    </div>
+                    <div id="groupContactsPreview"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>Boost Action</h3>
+                    <div class="action-buttons">
+                        <button id="boostGroupMembers" class="btn-primary">Boost Group Members</button>
+                    </div>
+                    <div id="groupBoostProgress" class="progress-container"></div>
+                    <div id="groupBoostResults" class="results-container"></div>
+                </div>
+            </div>
+            
+            <div id="statusSection" class="section">
+                <h2>Boost Status</h2>
+                <div class="card">
+                    <h3>Current Status</h3>
+                    <div id="statusDisplay"></div>
+                </div>
+                <div class="card">
+                    <h3>Recent Activities</h3>
+                    <div id="activityLog"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
