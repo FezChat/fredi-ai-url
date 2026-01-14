@@ -14,15 +14,21 @@ const multer = require('multer');
 
 const app = express();
 
-// Create uploads directory if it doesn't exist
+// Create necessary directories
 const uploadDir = 'uploads';
+const publicDir = 'public';
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure multer with better error handling
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
+}
+
+// Configure multer
 const upload = multer({
-  dest: 'uploads/',
+  dest: uploadDir + '/',
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
     files: 1
@@ -38,8 +44,10 @@ const upload = multer({
   }
 });
 
+// Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
@@ -60,23 +68,30 @@ async function parseContactFile(filePath, fileType) {
     switch (fileType) {
       case 'vcf':
         const vcardContent = fs.readFileSync(filePath, 'utf8');
-        const cards = vcards().parse(vcardContent);
-        cards.forEach(card => {
-          if (card.cellPhone) {
-            const phone = card.cellPhone.replace(/\D/g, '');
-            if (phone.length >= 10) contacts.push(phone);
+        // Simple VCF parser
+        const vcardLines = vcardContent.split('\n');
+        let currentPhone = '';
+        for (const line of vcardLines) {
+          if (line.startsWith('TEL;')) {
+            const phoneMatch = line.match(/TEL[^:]*:(.+)/);
+            if (phoneMatch) {
+              const phone = phoneMatch[1].replace(/\D/g, '');
+              if (phone.length >= 10) contacts.push(phone);
+            }
           }
-        });
+        }
         break;
 
       case 'json':
         const jsonData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        jsonData.forEach(item => {
-          if (item.phone) {
-            const phone = item.phone.toString().replace(/\D/g, '');
-            if (phone.length >= 10) contacts.push(phone);
-          }
-        });
+        if (Array.isArray(jsonData)) {
+          jsonData.forEach(item => {
+            if (item.phone || item.mobile || item.tel) {
+              const phone = (item.phone || item.mobile || item.tel).toString().replace(/\D/g, '');
+              if (phone.length >= 10) contacts.push(phone);
+            }
+          });
+        }
         break;
 
       case 'csv':
@@ -86,7 +101,9 @@ async function parseContactFile(filePath, fileType) {
             .on('data', (row) => {
               // Try common column names for phone numbers
               const phoneKey = Object.keys(row).find(key => 
-                key.toLowerCase().includes('phone') || key.toLowerCase().includes('mobile')
+                key.toLowerCase().includes('phone') || 
+                key.toLowerCase().includes('mobile') ||
+                key.toLowerCase().includes('tel')
               );
               if (phoneKey && row[phoneKey]) {
                 const phone = row[phoneKey].toString().replace(/\D/g, '');
@@ -115,7 +132,8 @@ async function parseContactFile(filePath, fileType) {
     throw new Error(`Failed to parse ${fileType} file: ${error.message}`);
   }
 
-  return [...new Set(contacts)]; // Remove duplicates
+  // Remove duplicates and empty values
+  return [...new Set(contacts.filter(phone => phone.length >= 10))];
 }
 
 // WhatsApp Connection Handler
@@ -175,17 +193,21 @@ async function boostChannel(channelId, contacts) {
     details: []
   };
 
+  console.log(`Starting channel boost for ${contacts.length} contacts...`);
+
   for (const contact of contacts) {
     try {
       // Follow newsletter/channel
       await socket.newsletterFollow(channelId);
-
+      
       results.success++;
       results.details.push({
         contact,
         status: 'success',
         message: `Followed channel ${channelId}`
       });
+
+      console.log(`✅ Contact ${contact} followed channel`);
 
       // Delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -197,6 +219,8 @@ async function boostChannel(channelId, contacts) {
         status: 'failed',
         message: error.message
       });
+      
+      console.log(`❌ Failed for contact ${contact}: ${error.message}`);
     }
   }
 
@@ -215,13 +239,16 @@ async function boostGroup(groupInviteCode, contacts) {
     details: []
   };
 
+  console.log(`Starting group boost for ${contacts.length} contacts...`);
+
   let groupJid = null;
   
   try {
     // First accept group invite
     groupJid = await socket.groupAcceptInvite(groupInviteCode);
-    console.log(`Joined group: ${groupJid}`);
+    console.log(`✅ Joined group: ${groupJid}`);
   } catch (error) {
+    console.error(`❌ Failed to join group: ${error.message}`);
     throw new Error(`Failed to join group: ${error.message}`);
   }
 
@@ -243,6 +270,8 @@ async function boostGroup(groupInviteCode, contacts) {
         message: `Added to group`
       });
 
+      console.log(`✅ Added contact ${contact} to group`);
+
       // Delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -253,6 +282,8 @@ async function boostGroup(groupInviteCode, contacts) {
         status: 'failed',
         message: error.message
       });
+      
+      console.log(`❌ Failed to add contact ${contact}: ${error.message}`);
     }
   }
 
@@ -260,6 +291,8 @@ async function boostGroup(groupInviteCode, contacts) {
 }
 
 // API Routes
+
+// Status endpoint
 app.get('/api/status', (req, res) => {
   res.json({
     success: true,
@@ -269,11 +302,15 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// SINGLE UPLOAD-CONTACTS ROUTE (REMOVED DUPLICATE)
+// Upload contacts endpoint
 app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
-  console.log('📥 Upload request received');
-  console.log('Request body:', req.body);
-  console.log('File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'No file');
+  console.log('\n📥 Upload request received');
+  console.log('Body:', req.body);
+  console.log('File:', req.file ? {
+    name: req.file.originalname,
+    size: req.file.size,
+    path: req.file.path
+  } : 'No file');
 
   try {
     const { type, targetId } = req.body;
@@ -353,7 +390,7 @@ app.post('/api/upload-contacts', upload.single('file'), async (req, res) => {
 
 // Boost endpoint
 app.post('/api/boost', async (req, res) => {
-  console.log('🚀 Boost request received:', req.body);
+  console.log('\n🚀 Boost request received:', req.body);
   
   try {
     const { type, targetId } = req.body;
@@ -424,7 +461,32 @@ app.post('/api/boost', async (req, res) => {
   }
 });
 
-// Add error handling middleware
+// Test endpoint for quick checks
+app.get('/api/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is working!',
+    timestamp: new Date().toISOString(),
+    contactsDB: {
+      channels: Object.keys(contactsDB.channels),
+      groups: Object.keys(contactsDB.groups)
+    }
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'Server is running',
+    port: PORT,
+    uploadDir: uploadDir,
+    whatsapp: isConnected ? 'connected' : 'disconnected',
+    time: new Date().toISOString()
+  });
+});
+
+// Error handling middleware
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     console.error('Multer error:', err);
@@ -442,30 +504,59 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'Server is running',
-    port: PORT,
-    uploadDir: uploadDir,
-    whatsapp: isConnected ? 'connected' : 'disconnected'
-  });
-});
-
-// Serve HTML for all other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Serve the HTML file - UPDATED TO SERVE DIRECTLY
+app.get('/', (req, res) => {
+  // Check if HTML file exists in current directory
+  const htmlPath = path.join(__dirname, 'index.html');
+  if (fs.existsSync(htmlPath)) {
+    res.sendFile(htmlPath);
+  } else {
+    // Fallback to public directory
+    const publicHtmlPath = path.join(__dirname, 'public', 'index.html');
+    if (fs.existsSync(publicHtmlPath)) {
+      res.sendFile(publicHtmlPath);
+    } else {
+      // Create a simple default page
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>FEE-XMD WhatsApp Booster</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; text-align: center; }
+            h1 { color: #667eea; }
+            .status { padding: 20px; background: #f0f0f0; border-radius: 10px; margin: 20px; }
+          </style>
+        </head>
+        <body>
+          <h1>FEE-XMD WhatsApp Booster</h1>
+          <div class="status">
+            <p>✅ Server is running on port ${PORT}</p>
+            <p>📁 Upload directory: ${uploadDir}</p>
+            <p>📱 WhatsApp: ${isConnected ? '✅ Connected' : '❌ Disconnected'}</p>
+            <p><a href="/api/status">Check API Status</a></p>
+            <p><a href="/api/test">Test API</a></p>
+            <p><a href="/health">Health Check</a></p>
+          </div>
+          <p>Please place your index.html file in the server directory or public folder.</p>
+        </body>
+        </html>
+      `);
+    }
+  }
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`📁 Upload directory: ${uploadDir}`);
+  console.log(`📂 Public directory: ${publicDir}`);
   console.log(`🌐 Open http://localhost:${PORT} in your browser`);
   console.log(`🔧 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔌 API Status: http://localhost:${PORT}/api/status`);
+  console.log(`🧪 API Test: http://localhost:${PORT}/api/test`);
   
-  // Initialize WhatsApp connection (uncomment when ready)
+  // Initialize WhatsApp connection (comment/uncomment as needed)
   // connectToWhatsApp();
 });
 
